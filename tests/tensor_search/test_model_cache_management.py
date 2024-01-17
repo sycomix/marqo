@@ -71,29 +71,28 @@ class TestModelCacheManagement(MarqoTestCase):
 
 
     def test_eject_model_cuda(self):
-        if self.CUDA_FLAG:
+        if not self.CUDA_FLAG:
+            return
         # check if we can eject the models
-            for model_name in self.MODEL_LIST:
-                res = eject_model(model_name,"cuda")
-                assert res["message"] ==  f"successfully eject model_name `{model_name}` from device `cuda`"
-                if (model_name, "cuda") in available_models:
-                    raise AssertionError
-
-            my_test_model_1 = "test-model-1"
-            my_test_model_2 = "test-model-2"
-
-            try:
-                eject_model(my_test_model_1, "cuda")
+        for model_name in self.MODEL_LIST:
+            res = eject_model(model_name,"cuda")
+            assert res["message"] ==  f"successfully eject model_name `{model_name}` from device `cuda`"
+            if (model_name, "cuda") in available_models:
                 raise AssertionError
-            except ModelNotInCacheError:
-                pass
 
-            try:
-                eject_model(my_test_model_2, "cuda")
-                raise AssertionError
-            except ModelNotInCacheError:
-                pass
-        else:
+        my_test_model_1 = "test-model-1"
+        my_test_model_2 = "test-model-2"
+
+        try:
+            eject_model(my_test_model_1, "cuda")
+            raise AssertionError
+        except ModelNotInCacheError:
+            pass
+
+        try:
+            eject_model(my_test_model_2, "cuda")
+            raise AssertionError
+        except ModelNotInCacheError:
             pass
 
 
@@ -135,7 +134,7 @@ class TestModelCacheManagement(MarqoTestCase):
             test_iterations = 10
             # Note this is a time consuming test.
 
-            for i in range(test_iterations):
+            for _ in range(test_iterations):
                 eject_model(self.MODEL_1, "cuda")
                 load_model(self.MODEL_1, "cuda")
 
@@ -146,15 +145,13 @@ class TestModelCacheManagement(MarqoTestCase):
                 assert psutil.cpu_percent(1) < 100.0
                 # memory usage
                 assert psutil.virtual_memory()[2]< 100.0
-        else:
-            pass
 
 
     def test_edge_case_cpu(self):
         test_iterations = 10
         # Note this is a time consuming test.
 
-        for i in range(test_iterations):
+        for _ in range(test_iterations):
             eject_model(self.MODEL_1, "cpu")
             load_model(self.MODEL_1, "cpu")
             # cpu usage

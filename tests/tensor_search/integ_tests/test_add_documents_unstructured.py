@@ -266,9 +266,16 @@ class TestAddDocumentsUnstructured(MarqoTestCase):
                         )
                     )
                     assert add_res['errors'] is True
-                    assert all(['error' in item for item in add_res['items'] if item['_id'].startswith('to_fail')])
-                    assert all([item['status'] == 200
-                                for item in add_res['items'] if item['_id'].startswith('to_pass')])
+                    assert all(
+                        'error' in item
+                        for item in add_res['items']
+                        if item['_id'].startswith('to_fail')
+                    )
+                    assert all(
+                        item['status'] == 200
+                        for item in add_res['items']
+                        if item['_id'].startswith('to_pass')
+                    )
 
     def test_add_documents_id_validation(self):
         """
@@ -342,7 +349,11 @@ class TestAddDocumentsUnstructured(MarqoTestCase):
                     )
                 )
                 assert add_res['errors'] is True
-                assert all(['error' in item for item in add_res['items'] if item['_id'].startswith('to_fail')])
+                assert all(
+                    'error' in item
+                    for item in add_res['items']
+                    if item['_id'].startswith('to_fail')
+                )
 
     def test_add_documents_set_device(self):
         """
@@ -514,7 +525,7 @@ class TestAddDocumentsUnstructured(MarqoTestCase):
         max_size = 400000
         mock_environ = {enums.EnvVars.MARQO_MAX_DOC_BYTES: str(max_size)}
 
-        @mock.patch.dict(os.environ, {**os.environ, **mock_environ})
+        @mock.patch.dict(os.environ, **os.environ | mock_environ)
         def run():
             update_res = tensor_search.add_documents(
                 config=self.config, add_docs_params=AddDocsParams(
@@ -539,7 +550,7 @@ class TestAddDocumentsUnstructured(MarqoTestCase):
         max_size = 400000
         mock_environ = {enums.EnvVars.MARQO_MAX_DOC_BYTES: str(max_size)}
 
-        @mock.patch.dict(os.environ, {**os.environ, **mock_environ})
+        @mock.patch.dict(os.environ, **os.environ | mock_environ)
         def run():
             update_res = tensor_search.add_documents(
                 config=self.config, add_docs_params=AddDocsParams(

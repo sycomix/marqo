@@ -45,8 +45,9 @@ class TestOnStartScript(MarqoTestCase):
                 model_caching_script = on_start_script.ModelsForCacheing()
                 raise AssertionError
             except exceptions.EnvVarError as e:
-                print(str(e))
+                print(e)
                 return True
+
         assert run()
     
     def test_preload_url_models(self):

@@ -174,7 +174,9 @@ class HFClassificationOnnx:
     def _get_save_name(self) -> None:
         """generates the saeve name for local storage
         """
-        self.save_path = os.path.join(ModelCache.onnx_cache_path, self.model_name + '_onnx')
+        self.save_path = os.path.join(
+            ModelCache.onnx_cache_path, f'{self.model_name}_onnx'
+        )
         self.model_save_name = self.save_path
         self.tokenizer_save_name = self.save_path
 
@@ -360,9 +362,7 @@ def _predict_owl(model, processed_inputs, post_process_function, size):
         outputs.pred_boxes = outputs.pred_boxes.to('cpu')
         # Target image sizes (height, width) to rescale box predictions [batch_size, 2]
         target_sizes = torch.Tensor([size[::-1]])
-        # Convert outputs (bounding boxes and class logits) to COCO API
-        results = post_process_function(outputs=outputs, target_sizes=target_sizes)
-        return results
+        return post_process_function(outputs=outputs, target_sizes=target_sizes)
 
 def process_owl_results(results: List) -> List:
     """wrapper for processing a list of results from owl-vit
@@ -390,11 +390,10 @@ def _process_owl_result(result: List[Dict], identifier: str) -> Tuple[List, List
         Tuple[List, List, List]: _description_
     """
     boxes, scores, _ = result[0]["boxes"], result[0]["scores"], result[0]["labels"]
- 
-    boxes_round = []
-    for i in range(len(boxes)):
-        boxes_round.append([round(i, 2) for i in boxes[i].tolist()])
 
+    boxes_round = [
+        [round(i, 2) for i in boxes[i].tolist()] for i in range(len(boxes))
+    ]
     return boxes, scores, [identifier]*len(scores)
 
 def sort_owl_boxes_scores(boxes: List, scores: List, identifier: List) -> Tuple[List, List, List]:

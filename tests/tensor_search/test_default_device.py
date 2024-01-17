@@ -126,7 +126,6 @@ class TestDefaultDevice(MarqoTestCase):
                 raise AssertionError
             except InternalError as e:
                 assert "Marqo encountered an error when loading device from environment variable `MARQO_BEST_AVAILABLE_DEVICE`" in str(e)
-                pass
         
     def test_add_document_uses_set_device(self):
         """
@@ -436,13 +435,13 @@ class TestDefaultDevice(MarqoTestCase):
         # Available devices
         for available_device in available_devices_list:
             with patch('torch.cuda.is_available', return_value=False),\
-                 patch.dict('os.environ', {EnvVars.MARQO_BEST_AVAILABLE_DEVICE: available_device}):
+                     patch.dict('os.environ', {EnvVars.MARQO_BEST_AVAILABLE_DEVICE: available_device}):
                 self.assertEqual(get_best_available_device(), available_device)
 
         # Unavailable devices
         for unavailable_device in unavailable_devices_list:
             with patch('torch.cuda.is_available', return_value=False), \
-                patch.dict('os.environ', {EnvVars.MARQO_BEST_AVAILABLE_DEVICE: unavailable_device}):
+                    patch.dict('os.environ', {EnvVars.MARQO_BEST_AVAILABLE_DEVICE: unavailable_device}):
                 try:
                     get_best_available_device()
                     raise AssertionError
@@ -451,13 +450,12 @@ class TestDefaultDevice(MarqoTestCase):
 
 
         # EnvVar not set
-        with patch('torch.cuda.is_available', return_value=False), \
-            patch.dict('os.environ', {}):
+        with (patch('torch.cuda.is_available', return_value=False), patch.dict('os.environ', {})):
             try:
                 get_best_available_device()
                 raise AssertionError
             except InternalError as e:
-                self.assertIn(f"Invalid device: {None}.", str(e))
+                self.assertIn('Invalid device: None.', str(e))
 
     def test_get_best_available_device_cuda(self):
         '''Test the get_best_available_device function when both cuda and cpu is available'''
@@ -467,15 +465,15 @@ class TestDefaultDevice(MarqoTestCase):
         # Available devices
         for available_device in available_devices_list:
             with patch('torch.cuda.is_available', return_value=True), \
-                 patch('torch.cuda.device_count', return_value=2), \
-                    patch.dict('os.environ', {EnvVars.MARQO_BEST_AVAILABLE_DEVICE: available_device}):
+                     patch('torch.cuda.device_count', return_value=2), \
+                        patch.dict('os.environ', {EnvVars.MARQO_BEST_AVAILABLE_DEVICE: available_device}):
                 self.assertEqual(get_best_available_device(), available_device)
 
         # Unavailable devices
         for unavailable_device in unavailable_devices_list:
             with patch('torch.cuda.is_available', return_value=True), \
-                    patch('torch.cuda.device_count', return_value=2), \
-                    patch.dict('os.environ', {EnvVars.MARQO_BEST_AVAILABLE_DEVICE: unavailable_device}):
+                        patch('torch.cuda.device_count', return_value=2), \
+                        patch.dict('os.environ', {EnvVars.MARQO_BEST_AVAILABLE_DEVICE: unavailable_device}):
                 try:
                     get_best_available_device()
                     raise AssertionError
@@ -483,11 +481,9 @@ class TestDefaultDevice(MarqoTestCase):
                     self.assertIn(f"Invalid device: {unavailable_device}.", str(e))
 
         # EnvVars not set
-        with patch('torch.cuda.is_available', return_value=True), \
-            patch('torch.cuda.device_count', return_value=2), \
-            patch.dict('os.environ', {}):
+        with (patch('torch.cuda.is_available', return_value=True), patch('torch.cuda.device_count', return_value=2), patch.dict('os.environ', {})):
             try:
                 get_best_available_device()
                 raise AssertionError
             except InternalError as e:
-                self.assertIn(f"Invalid device: {None}.", str(e))
+                self.assertIn('Invalid device: None.', str(e))

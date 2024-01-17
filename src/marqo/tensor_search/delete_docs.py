@@ -90,13 +90,15 @@ def delete_documents_vespa(config: Config, deletion_instruction: MqDeleteDocsReq
             )
             logger.error(f'Failed to delete document: {response}')
 
-    mq_delete_res = MqDeleteDocsResponse(
-        index_name=deletion_instruction.index_name, status_string='succeeded',
+    return MqDeleteDocsResponse(
+        index_name=deletion_instruction.index_name,
+        status_string='succeeded',
         document_ids=deletion_instruction.document_ids,
-        deleted_documents_count=deleted_documents_count, deletion_start=t0,
-        deletion_end=t1, result_list=result_list
+        deleted_documents_count=deleted_documents_count,
+        deletion_start=t0,
+        deletion_end=t1,
+        result_list=result_list,
     )
-    return mq_delete_res
 
 
 def _get_id_from_vespa_id(vespa_id: str) -> str:

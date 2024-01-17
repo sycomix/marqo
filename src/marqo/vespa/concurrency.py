@@ -7,8 +7,7 @@ def _run_coroutine_in_thread(coro):
         future = executor.submit(
             asyncio.run, coro
         )
-        return_value = future.result()
-        return return_value
+        return future.result()
 
 
 def run_coroutine(coro):

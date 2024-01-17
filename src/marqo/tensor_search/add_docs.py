@@ -104,7 +104,7 @@ def download_images(docs: List[dict], thread_count: int, tensor_fields: List[str
     image_repo = dict()
 
     try:
-        m = [RequestMetrics() for i in range(thread_count)]
+        m = [RequestMetrics() for _ in range(thread_count)]
         thread_allocated_docs = [copied[i: i + docs_per_thread] for i in range(len(copied))[::docs_per_thread]]
         threads = [threading.Thread(target=threaded_download_images, args=(allocation, image_repo,
                                                                            tensor_fields,
@@ -153,7 +153,7 @@ def reduce_thread_metrics(data):
     for key, value in data.items():
         if key.startswith("image_download."):
             parts = key.split('.')
-            new_key = '.'.join(parts[0:1] + parts[2:]) if parts[1] != 'full_time' else key
+            new_key = '.'.join(parts[:1] + parts[2:]) if parts[1] != 'full_time' else key
             if new_key in result:
                 if isinstance(result[new_key], list):
                     result[new_key].append(value)

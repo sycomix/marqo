@@ -857,8 +857,11 @@ class TestValidateDeleteDocsRequest(unittest.TestCase):
             validation.validate_delete_docs_request(delete_request, self.max_delete_docs_count)
 
     def test_exceed_max_delete_docs_count(self):
-        delete_request = MqDeleteDocsRequest(index_name="my_index", schema_name='my__00index',
-                                             document_ids=["id{}".format(i) for i in range(1, 12)])
+        delete_request = MqDeleteDocsRequest(
+            index_name="my_index",
+            schema_name='my__00index',
+            document_ids=[f"id{i}" for i in range(1, 12)],
+        )
         with self.assertRaises(InvalidArgError):
             validation.validate_delete_docs_request(delete_request, self.max_delete_docs_count)
 
@@ -877,7 +880,9 @@ class TestValidateDeleteDocsRequest(unittest.TestCase):
     def test_no_limit(self):
         # the default limit is 10000,
         delete_request = MqDeleteDocsRequest(
-            index_name="my_index", schema_name='my__00index',
-            document_ids=["id{}".format(i) for i in range(1, 20000)])
+            index_name="my_index",
+            schema_name='my__00index',
+            document_ids=[f"id{i}" for i in range(1, 20000)],
+        )
         with self.assertRaises(RuntimeError):
             validation.validate_delete_docs_request(delete_request, None)

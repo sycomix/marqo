@@ -25,11 +25,11 @@ class TestTestModelOutputs(unittest.TestCase):
         device = 'cpu'
         eps = 1e-9
         texts = ['hello', 'big', 'asasasasaaaaaaaaaaaa', '', 'a word. another one!?. #$#.']
-        
-        for name in names:
+
+        for _ in names:
             model_properties = get_model_properties_from_registry('test')
             model = _load_model(model_properties['name'], model_properties=model_properties, device=device)
-            
+
             for text in texts:
                 assert abs(model.encode(text) - model.encode([text])).sum() < eps
                 assert abs(model.encode(text) - model.encode(text)).sum() < eps

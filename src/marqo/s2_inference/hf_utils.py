@@ -37,7 +37,9 @@ class HF_MODEL(Model):
         model_location_presence = ModelProperties.model_location in self.model_properties
         path = self.model_properties.get("localpath", None) or self.model_properties.get("url", None)
         # HF models can be loaded from 3 entries: path (url or localpath), model_name, or model_location
-        if (path is not None) + (self.model_name is not None) + (model_location_presence is True) != 1:
+        if (path is not None) + (
+            self.model_name is not None
+        ) + model_location_presence != 1:
             raise InvalidModelPropertiesError("Exactly one of (`localpath`/`url`) or `model_location`, `name` can be specified"
                                               " in `model_properties` for `hf` models as they conflict with each other in model loading."
                                               " Please ensure that exactly one of these is specified in `model_properties` and retry.")
@@ -49,10 +51,10 @@ class HF_MODEL(Model):
         elif self.model_name is not None:
             # Loading from structured huggingface repo directly, token is required directly
             self.model_path = self.model_name
-        elif model_location_presence is True:
+        elif model_location_presence:
             # This is a special case for huggingface models, where we can load a model directory from a repo
             if ("hf" in self.model_properties["model_location"]) and ("repo_id" in self.model_properties["model_location"]["hf"]) and \
-                ("filename" not in self.model_properties["model_location"]["hf"]):
+                    ("filename" not in self.model_properties["model_location"]["hf"]):
                 return self._load_from_private_hf_repo()
             else:
                 self.model_path = self._download_from_repo()
@@ -209,49 +211,48 @@ def extract_huggingface_archive(path: str) -> str:
     Returns:
         The directory path to the model or the repo_id in huggingface
     '''
-    if os.path.isfile(path):
-        # if it's a file, check if it's a compressed file
-        base, ext = os.path.splitext(path)
-        if ext in ['.bin', '.pt']:
-            raise InvalidModelPropertiesError(f"Marqo does not support loading Hugging Face SBERT models from the provided single `{ext}` file. "
-                                              "Please try to wrap the model in a Hugging Face archive file and try again. ")
-        try:
-            # create a new directory with the same name as the file
-            new_dir = base
-            os.makedirs(new_dir, exist_ok=True)
-
-            # extract the compressed file
-            # If the target directory already exists, it will be overwritten by default without warning.
-            if ext == '.zip':
-                with zipfile.ZipFile(path, 'r') as zip_ref:
-                    zip_ref.extractall(new_dir)
-            else:
-                with tarfile.open(path, 'r') as tar_ref:
-                    tar_ref.extractall(new_dir)
-            # return the path to the new directory
-            return new_dir
-        except (tarfile.ReadError, zipfile.BadZipfile):
-            try:
-                os.remove(path)
-            except Exception as remove_e:
-                raise RuntimeError(
-                    f"Marqo encountered an error while attempting to delete a corrupted file `{path}`. "
-                    f"Please report this issue on Marqo's Github Repo and replace the problematic Marqo instance with "
-                    f"a new one. \n "
-                    f"Error message: `{str(remove_e)}`"
-                )
-            raise InvalidModelPropertiesError(f'Marqo encountered an error while extracting the compressed model archive from `{path}`.\n '
-                                              f'This is probably because the file is corrupted or the extension `{ext}` is not supported. '
-                                              f'Marqo has removed the corrupted file from the disk.'
-                                              f'Please ensure that the file is a valid compressed file and try again.')
-        # will this error really happen?
-        except PermissionError:
-            raise InvalidModelPropertiesError(f'Marqo encountered an error while extracting the compressed model archive from `{path}`. '
-                                              f'This is probably because the Marqo does not have the permission to write to the directory. '
-                                              f'Please check the access permission of Marqo and try again.')
-        except Exception as e:
-            raise RuntimeError(f'Marqo encountered an error while extracting the compressed model archive from `{path}`. '
-                                              f'The original error message is `{str(e)}`')
-    else:
+    if not os.path.isfile(path):
         # return the directory path or repo_id directory
         return path
+    # if it's a file, check if it's a compressed file
+    base, ext = os.path.splitext(path)
+    if ext in ['.bin', '.pt']:
+        raise InvalidModelPropertiesError(f"Marqo does not support loading Hugging Face SBERT models from the provided single `{ext}` file. "
+                                          "Please try to wrap the model in a Hugging Face archive file and try again. ")
+    try:
+        # create a new directory with the same name as the file
+        new_dir = base
+        os.makedirs(new_dir, exist_ok=True)
+
+        # extract the compressed file
+        # If the target directory already exists, it will be overwritten by default without warning.
+        if ext == '.zip':
+            with zipfile.ZipFile(path, 'r') as zip_ref:
+                zip_ref.extractall(new_dir)
+        else:
+            with tarfile.open(path, 'r') as tar_ref:
+                tar_ref.extractall(new_dir)
+        # return the path to the new directory
+        return new_dir
+    except (tarfile.ReadError, zipfile.BadZipfile):
+        try:
+            os.remove(path)
+        except Exception as remove_e:
+            raise RuntimeError(
+                f"Marqo encountered an error while attempting to delete a corrupted file `{path}`. "
+                f"Please report this issue on Marqo's Github Repo and replace the problematic Marqo instance with "
+                f"a new one. \n "
+                f"Error message: `{str(remove_e)}`"
+            )
+        raise InvalidModelPropertiesError(f'Marqo encountered an error while extracting the compressed model archive from `{path}`.\n '
+                                          f'This is probably because the file is corrupted or the extension `{ext}` is not supported. '
+                                          f'Marqo has removed the corrupted file from the disk.'
+                                          f'Please ensure that the file is a valid compressed file and try again.')
+    # will this error really happen?
+    except PermissionError:
+        raise InvalidModelPropertiesError(f'Marqo encountered an error while extracting the compressed model archive from `{path}`. '
+                                          f'This is probably because the Marqo does not have the permission to write to the directory. '
+                                          f'Please check the access permission of Marqo and try again.')
+    except Exception as e:
+        raise RuntimeError(f'Marqo encountered an error while extracting the compressed model archive from `{path}`. '
+                                          f'The original error message is `{str(e)}`')

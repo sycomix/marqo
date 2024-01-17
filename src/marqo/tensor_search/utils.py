@@ -20,10 +20,10 @@ from marqo.tensor_search.enums import EnvVars
 
 def dicts_to_jsonl(dicts: List[dict]) -> str:
     """Turns a list of dicts into a JSONL string"""
-    return functools.reduce(
-        lambda x, y: "{}\n{}".format(x, json.dumps(y)),
-        dicts, ""
-    ) + "\n"
+    return (
+        functools.reduce(lambda x, y: f"{x}\n{json.dumps(y)}", dicts, "")
+        + "\n"
+    )
 
 
 def truncate_dict_vectors(doc: Union[dict, List], new_length: int = 5) -> Union[List, Dict]:
@@ -33,15 +33,17 @@ def truncate_dict_vectors(doc: Union[dict, List], new_length: int = 5) -> Union[
     copied = copy.deepcopy(doc)
 
     if isinstance(doc, list):
-        return [truncate_dict_vectors(d, new_length=new_length)
-                if isinstance(d, list) or isinstance(d, dict)
-                else copy.deepcopy(d)
-                for d in doc]
+        return [
+            truncate_dict_vectors(d, new_length=new_length)
+            if isinstance(d, (list, dict))
+            else copy.deepcopy(d)
+            for d in doc
+        ]
 
     for k, v in list(copied.items()):
         if "vector" in k.lower() and isinstance(v, Sequence):
             copied[k] = v[:new_length]
-        elif isinstance(v, dict) or isinstance(v, list):
+        elif isinstance(v, (dict, list)):
             copied[k] = truncate_dict_vectors(v, new_length=new_length)
 
     return copied
@@ -117,10 +119,7 @@ def check_device_is_available(device: str) -> bool:
     if int(split[1]) < 0:
         raise exceptions.MarqoError(f"Invalid cuda device number! {device}. It must not be negative")
 
-    if int(split[1]) < torch.cuda.device_count():
-        return True
-    else:
-        return False
+    return int(split[1]) < torch.cuda.device_count()
 
 
 def merge_dicts(base: dict, preferences: dict) -> dict:
@@ -136,10 +135,7 @@ def merge_dicts(base: dict, preferences: dict) -> dict:
             if not isinstance(prefs[key], dict):
                 merged[key] = prefs[key]
             else:
-                if key in merged:
-                    merged[key] = merge(merged[key], prefs[key])
-                else:
-                    merged[key] = prefs[key]
+                merged[key] = merge(merged[key], prefs[key]) if key in merged else prefs[key]
         return merged
 
     return merge(merged=merged_dicts, prefs=preferences)
@@ -154,10 +150,7 @@ def read_env_vars_and_defaults(var: str) -> Optional[str]:
 
     def none_if_empty(value: Optional[str]) -> Optional[str]:
         """Returns None if value is an empty string"""
-        if value is not None and len(value) == 0:
-            return None
-        else:
-            return value
+        return None if value is not None and len(value) == 0 else value
 
     try:
         return none_if_empty(os.environ[var])
@@ -277,8 +270,7 @@ def get_marqo_root_from_env() -> str:
         for example: "/Users/CoolUser/marqo/src/marqo"
     """
     try:
-        marqo_root_path = os.environ[enums.EnvVars.MARQO_ROOT_PATH]
-        if marqo_root_path:
+        if marqo_root_path := os.environ[enums.EnvVars.MARQO_ROOT_PATH]:
             return marqo_root_path
     except KeyError:
         pass
@@ -344,15 +336,12 @@ def is_tensor_field(field: str,
                     tensor_fields: List[str]
                     ) -> bool:
     """Determine whether a field is a tensor field or not for add_documents calls."""
-    if not tensor_fields:
-        return False
-    else:
-        return field in tensor_fields
+    return False if not tensor_fields else field in tensor_fields
 
 
 def check_is_zero_vector(vector: List[float]) -> bool:
     """Check if a vector is all zero. We assume the input to this function is of valid type, List[Float]"""
-    return all([x == 0 for x in vector])
+    return all(x == 0 for x in vector)
 
 
 def extract_multimodal_mappings(mappings: Dict) -> Dict:
@@ -362,11 +351,11 @@ def extract_multimodal_mappings(mappings: Dict) -> Dict:
 
 def extract_multimodal_content(doc: dict, mapping: Dict) -> Dict:
     """Extract multimodal content from doc based on multimodal mapping"""
-    multimodal_content = {}
-    for field_name, weight in mapping["weights"].items():
-        if field_name in doc:
-            multimodal_content[field_name] = doc[field_name]
-    return multimodal_content
+    return {
+        field_name: doc[field_name]
+        for field_name, weight in mapping["weights"].items()
+        if field_name in doc
+    }
 
 
 def enable_batch_apis():

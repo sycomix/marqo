@@ -85,12 +85,14 @@ def marqo_base_exception_handler(request: Request, exc: base_exceptions.MarqoErr
         (base_exceptions.MarqoError, api_exceptions.MarqoWebError),
     ]
 
-    converted_error = None
-    for base_exception, api_exception in api_exception_mappings:
-        if isinstance(exc, base_exception):
-            converted_error = api_exception(exc.message)
-            break
-
+    converted_error = next(
+        (
+            api_exception(exc.message)
+            for base_exception, api_exception in api_exception_mappings
+            if isinstance(exc, base_exception)
+        ),
+        None,
+    )
     # Completely unhandled exception (500)
     if not converted_error:
         converted_error = api_exceptions.MarqoWebError(exc.message)
@@ -106,14 +108,13 @@ def marqo_api_exception_handler(request: Request, exc: api_exceptions.MarqoWebEr
     to handle WebErrors vs Regular errors"""
     logger.error(str(exc), exc_info=True)
 
-    headers = getattr(exc, "headers", None)
     body = {
         "message": exc.message,
         "code": exc.code,
         "type": exc.error_type,
         "link": exc.link
     }
-    if headers:
+    if headers := getattr(exc, "headers", None):
         return JSONResponse(
             content=body, status_code=exc.status_code, headers=headers
         )
@@ -147,14 +148,13 @@ def marqo_internal_exception_handler(request, exc: api_exceptions.MarqoError):
     """MarqoErrors are treated as internal errors"""
     logger.error(str(exc), exc_info=True)
 
-    headers = getattr(exc, "headers", None)
     body = {
         "message": exc.message,
         "code": 500,
         "type": "internal_error",
         "link": ""
     }
-    if headers:
+    if headers := getattr(exc, "headers", None):
         return JSONResponse(content=body, status_code=500, headers=headers)
     else:
         return JSONResponse(content=body, status_code=500)

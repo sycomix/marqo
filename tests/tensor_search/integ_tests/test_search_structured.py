@@ -899,7 +899,7 @@ class TestSearchStructured(MarqoTestCase):
                 with self.subTest(f"search_method={search_method}, max_doc={max_doc}"):
                     mock_environ = {EnvVars.MARQO_MAX_RETRIEVABLE_DOCS: str(max_doc)}
 
-                    @mock.patch.dict(os.environ, {**os.environ, **mock_environ})
+                    @mock.patch.dict(os.environ, **os.environ | mock_environ)
                     def run():
                         res = half_search = tensor_search.search(
                             search_method=search_method,

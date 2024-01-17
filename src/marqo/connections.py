@@ -71,11 +71,10 @@ class RedisDriver:
     def load_lua_scripts(self) -> dict:
         self.lua_shas = dict()
         for script in self.scripts:
-            script_file = open(script["path"], "r")
-            script_text = script_file.read()
+            with open(script["path"], "r") as script_file:
+                script_text = script_file.read()
 
-            self.lua_shas[script["name"]] = self.driver.script_load(script_text)
-            script_file.close()
+                self.lua_shas[script["name"]] = self.driver.script_load(script_text)
         return self.lua_shas
 
     def get_db(self):

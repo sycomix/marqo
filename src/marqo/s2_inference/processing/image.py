@@ -227,8 +227,6 @@ class PatchifyModel:
 
     def infer(self, image):
         self._load_image(image)
-        # input is image
-        pass
         # output are unprocessed bounding boxes        
 
     def _filter_bb(self):

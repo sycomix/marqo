@@ -41,18 +41,18 @@ def _load_DINO_model(arch: Literal['vit_small', 'vit_base'], device: str, patch_
 
     if arch == "vit_small":
         # TODO add onnx support
-        if patch_size == 8:
-            model = torch.hub.load('facebookresearch/dino:main', 'dino_vits8')
-
         if patch_size == 16:
             model = torch.hub.load('facebookresearch/dino:main', 'dino_vits16')
 
-    elif arch == "vit_base":
-        if patch_size == 8:
-            model = torch.hub.load('facebookresearch/dino:main', 'dino_vitb8')
+        elif patch_size == 8:
+            model = torch.hub.load('facebookresearch/dino:main', 'dino_vits8')
 
+    elif arch == "vit_base":
         if patch_size == 16:
             model = torch.hub.load('facebookresearch/dino:main', 'dino_vitb16')
+
+        elif patch_size == 8:
+            model = torch.hub.load('facebookresearch/dino:main', 'dino_vitb8')
 
     else:
         raise ModelLoadError(f"unknown model of arch:{arch} and patch_size:{patch_size}")
@@ -139,8 +139,7 @@ def _rescale_image(image: Union[ndarray, ImageType]) -> ndarray:
     image = image*1.0
     image /= image.max()
     image *= 255
-    image = image.astype(np.uint8)
-    return image
+    return image.astype(np.uint8)
 
 def attention_to_bboxs(image: ndarray) -> List[Tuple]:
     """turns attention maps into classless bounding boxes

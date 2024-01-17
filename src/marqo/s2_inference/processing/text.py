@@ -142,13 +142,9 @@ def split_text(text: str, split_by: str = 'sentence', split_length: int = 2, spl
 
     # do the splitting
     split_text = _func(text)
-    
+
     # concatenate individual elements based on split_length & split_stride
     segments = list(windowed(split_text, n=split_length, step=split_length - split_overlap))
 
-    # reconstruct the segments. there is potential for a lossy process here as we
-    # assume a uniform seperator when reconstructing the sentences
-    text_splits = _reconstruct_multi_list(segments, seperator)
-
-    return text_splits
+    return _reconstruct_multi_list(segments, seperator)
 

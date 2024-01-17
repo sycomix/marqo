@@ -98,11 +98,7 @@ def demo_postprocess(outputs: ndarray, img_size: Tuple[int, int], p6: bool = Fal
     grids = []
     expanded_strides = []
 
-    if not p6:
-        strides = [8, 16, 32]
-    else:
-        strides = [8, 16, 32, 64]
-
+    strides = [8, 16, 32] if not p6 else [8, 16, 32, 64]
     hsizes = [img_size[0] // stride for stride in strides]
     wsizes = [img_size[1] // stride for stride in strides]
 

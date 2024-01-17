@@ -101,7 +101,7 @@ def main():
             delete_index()
 
     # Main application frontend
-    logo = Image.open("{}\marqo-logo.jpg".format(cwd))
+    logo = Image.open(f"{cwd}\marqo-logo.jpg")
     st.image(logo)
 
     search_text, search_image_url, search_image = None, None, None
@@ -139,7 +139,7 @@ def main():
 
     # Marqo Results logic
     if ((search_image is not None) or (search_image_url) or (search_text)) and search_btn:
-        if search_text != "" and search_text != None:
+        if search_text not in ["", None]:
             results = mq.index("demo-search-index").search(
                 search_text,
                 filter_string=create_filter_str(filtering), 
@@ -147,18 +147,18 @@ def main():
                 searchable_attributes=[i.lower() for i in searchable_attr],
                 limit=30
                 )
-        
-        elif search_image_url != "" and search_image_url != None:
+
+        elif search_image_url not in ["", None]:
             results = mq.index("demo-search-index").search(
                 search_image_url,
                 filter_string=create_filter_str(filtering), 
                 searchable_attributes=[i.lower() for i in searchable_attr],
                 limit=30
                 )
-        
+
         else:
             uploaded_img_name = save_uploadedfile(search_image)
-            
+
             uploaded_img_path = f"http://host.docker.internal:8222/{uploaded_img_name}"
             print(uploaded_img_path)
 
@@ -173,13 +173,7 @@ def main():
 
         st.session_state['results'] = results
 
-        if st.session_state['results']['hits']:
-            st.session_state['page'] = 0
-        else:
-            st.session_state['page'] = -1
-
-
-
+        st.session_state['page'] = 0 if st.session_state['results']['hits'] else -1
     # Results Pagination Logic
     if st.session_state['page'] > -1:
         prev_col, page_col, next_col = st.columns([1,9,1])
@@ -194,7 +188,10 @@ def main():
                 st.session_state['page'] += 1
 
         with page_col:
-            st.markdown('<div style="text-align: center"> {}</div>'.format("Page " + str(st.session_state['page']+1)), unsafe_allow_html=True)
+            st.markdown(
+                f"""<div style="text-align: center"> {"Page " + str(st.session_state['page'] + 1)}</div>""",
+                unsafe_allow_html=True,
+            )
 
     if st.session_state['results'] != {}:
         if st.session_state['results']['hits']:

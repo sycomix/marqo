@@ -38,11 +38,7 @@ def main():
 
     response = mq.create_index(index_name, settings_dict=settings)
 
-    if torch.cuda.is_available():
-        local_device = "cuda"
-    else:
-        local_device = "cpu"
-
+    local_device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Transcribing using {local_device} and indexing using {marqo_device}")
 
     print("NOTE: Transcribing and indexing may take some time...")

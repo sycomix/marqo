@@ -394,9 +394,9 @@ class TestRerankingWithModels(unittest.TestCase):
 
         not_in_results_field = 'location_location'
 
-        assert any(True if in_results_field in r else False for r in results_lexical['hits'])
+        assert any(in_results_field in r for r in results_lexical['hits'])
 
-        assert not any(True if not_in_results_field in r else False for r in results_lexical['hits'])
+        assert all(not_in_results_field not in r for r in results_lexical['hits'])
 
         assert rerank._check_searchable_fields_in_results(search_results=results_lexical, searchable_fields=None)
 

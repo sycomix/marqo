@@ -139,7 +139,7 @@ class UnstructuredVespaDocument(MarqoBaseModel):
                                                 f"Document={self.fields.dict()}. "
                                                 f"Original error message {e}")
 
-            if not len(self.fields.vespa_chunks) == len(embeddings_list):
+            if len(self.fields.vespa_chunks) != len(embeddings_list):
                 raise VespaDocumentParsingError(f"Number of chunks and embeddings do not match "
                                                 f"for document _id= {self.fields.marqo__id}")
             marqo_document[index_constants.MARQO_DOC_TENSORS] = dict()
@@ -150,11 +150,11 @@ class UnstructuredVespaDocument(MarqoBaseModel):
                 if field_name not in marqo_document[index_constants.MARQO_DOC_TENSORS]:
                     marqo_document[index_constants.MARQO_DOC_TENSORS][field_name] = dict()
                     marqo_document[index_constants.MARQO_DOC_TENSORS][field_name][index_constants.MARQO_DOC_CHUNKS]\
-                        = []
+                            = []
                     marqo_document[index_constants.MARQO_DOC_TENSORS][field_name][
                         index_constants.MARQO_DOC_EMBEDDINGS] = []
                 marqo_document[index_constants.MARQO_DOC_TENSORS][field_name] \
-                    [index_constants.MARQO_DOC_CHUNKS].append(
+                        [index_constants.MARQO_DOC_CHUNKS].append(
                     content)
                 marqo_document[index_constants.MARQO_DOC_TENSORS][field_name][
                     index_constants.MARQO_DOC_EMBEDDINGS].append(embedding)
@@ -163,7 +163,7 @@ class UnstructuredVespaDocument(MarqoBaseModel):
             marqo_document[unstructured_common.MARQO_DOC_MULTIMODAL_PARAMS] = dict()
             for multimodal_field_name, serialized_multimodal_params in self.fields.vespa_multimodal_params.items():
                 marqo_document[unstructured_common.MARQO_DOC_MULTIMODAL_PARAMS][multimodal_field_name] = \
-                    json.loads(serialized_multimodal_params)
+                        json.loads(serialized_multimodal_params)
 
         if return_highlights and self.fields.match_features:
             if not self.fields.vespa_chunks:

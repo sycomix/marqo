@@ -54,8 +54,10 @@ def vectorise(model_name: str, content: Union[str, List[str]], model_properties:
     """
 
     if not device:
-        raise InternalError(message=f"vectorise (internal function) cannot be called without setting device!")
-    
+        raise InternalError(
+            message="vectorise (internal function) cannot be called without setting device!"
+        )
+
     validated_model_properties = _validate_model_properties(model_name, model_properties)
     model_cache_key = _create_model_cache_key(model_name, device, validated_model_properties)
 
@@ -68,10 +70,15 @@ def vectorise(model_name: str, content: Union[str, List[str]], model_properties:
         if isinstance(content, str):
             vectorised = available_models[model_cache_key][AvailableModelsKey.model].encode(content, normalize=normalize_embeddings, **kwargs)
         else:
-            vector_batches = []
             batch_size = _get_max_vectorise_batch_size()
-            for batch in generate_batches(content, batch_size=batch_size):
-                vector_batches.append(_convert_tensor_to_numpy(available_models[model_cache_key][AvailableModelsKey.model].encode(batch, normalize=normalize_embeddings, **kwargs)))
+            vector_batches = [
+                _convert_tensor_to_numpy(
+                    available_models[model_cache_key][
+                        AvailableModelsKey.model
+                    ].encode(batch, normalize=normalize_embeddings, **kwargs)
+                )
+                for batch in generate_batches(content, batch_size=batch_size)
+            ]
             if not vector_batches or all(
                     len(batch) == 0 for batch in vector_batches):  # Check for empty vector_batches or empty arrays
                 raise RuntimeError(f"Vectorise created an empty list of batches! Content: {content}")
@@ -120,14 +127,18 @@ def _create_model_cache_key(model_name: str, device: str, model_properties: dict
     if model_properties is None:
         model_properties = dict()
 
-    model_cache_key = (model_name + "||" +
-                       model_properties.get('name', '') + "||" +
-                       str(model_properties.get('dimensions', '')) + "||" +
-                       model_properties.get('type', '') + "||" +
-                       str(model_properties.get('tokens', '')) + "||" +
-                       device)
-
-    return model_cache_key
+    return (
+        f"{model_name}||"
+        + model_properties.get('name', '')
+        + "||"
+        + str(model_properties.get('dimensions', ''))
+        + "||"
+        + model_properties.get('type', '')
+        + "||"
+        + str(model_properties.get('tokens', ''))
+        + "||"
+        + device
+    )
 
 
 def _update_available_models(model_cache_key: str, model_name: str, validated_model_properties: dict,
@@ -236,24 +247,23 @@ def _validate_model_into_device(model_name:str, model_properties: dict, device: 
     model_size = get_model_size(model_name, model_properties)
     if _check_memory_threshold_for_model(device, model_size, calling_func = _validate_model_into_device.__name__):
         return True
-    else:
-        model_cache_key_for_device = [key for key in list(available_models) if key.endswith(device)]
-        sorted_key_for_device = sorted(model_cache_key_for_device,
-                                       key=lambda x: available_models[x][
-                                           AvailableModelsKey.most_recently_used_time])
-        for key in sorted_key_for_device:
-            logger.info(
-                f"Eject model = `{key.split('||')[0]}` with size = `{available_models[key].get('model_size', constants.DEFAULT_MODEL_SIZE)}` from device = `{device}` "
-                f"to save space for model = `{model_name}`.")
-            del available_models[key]
-            if _check_memory_threshold_for_model(device, model_size, calling_func = _validate_model_into_device.__name__):
-                return True
+    model_cache_key_for_device = [key for key in list(available_models) if key.endswith(device)]
+    sorted_key_for_device = sorted(model_cache_key_for_device,
+                                   key=lambda x: available_models[x][
+                                       AvailableModelsKey.most_recently_used_time])
+    for key in sorted_key_for_device:
+        logger.info(
+            f"Eject model = `{key.split('||')[0]}` with size = `{available_models[key].get('model_size', constants.DEFAULT_MODEL_SIZE)}` from device = `{device}` "
+            f"to save space for model = `{model_name}`.")
+        del available_models[key]
+        if _check_memory_threshold_for_model(device, model_size, calling_func = _validate_model_into_device.__name__):
+            return True
 
-        if _check_memory_threshold_for_model(device, model_size, calling_func = _validate_model_into_device.__name__) is False:
-            raise ModelCacheManagementError(
-                f"Marqo CANNOT find enough space to load model = `{model_name}` in device = `{device}`.\n"
-                f"Marqo tried to eject all the models on this device = `{device}` but still can't find enough space. \n"
-                f"Please use a smaller model or increase the memory threshold.")
+    if _check_memory_threshold_for_model(device, model_size, calling_func = _validate_model_into_device.__name__) is False:
+        raise ModelCacheManagementError(
+            f"Marqo CANNOT find enough space to load model = `{model_name}` in device = `{device}`.\n"
+            f"Marqo tried to eject all the models on this device = `{device}` but still can't find enough space. \n"
+            f"Please use a smaller model or increase the memory threshold.")
 
 
 def _check_memory_threshold_for_model(device: str, model_size: Union[float, int], calling_func: str = None) -> bool:
@@ -276,12 +286,22 @@ def _check_memory_threshold_for_model(device: str, model_size: Union[float, int]
     if device.startswith("cuda"):
         torch.cuda.synchronize(device)
         torch.cuda.empty_cache()
-        used_memory = sum([available_models[key].get("model_size", constants.DEFAULT_MODEL_SIZE) for key, values in
-                           available_models.items() if key.endswith(device)])
+        used_memory = sum(
+            available_models[key].get(
+                "model_size", constants.DEFAULT_MODEL_SIZE
+            )
+            for key, values in available_models.items()
+            if key.endswith(device)
+        )
         threshold = float(read_env_vars_and_defaults(EnvVars.MARQO_MAX_CUDA_MODEL_MEMORY))
     elif device.startswith("cpu"):
-        used_memory = sum([available_models[key].get("model_size", constants.DEFAULT_MODEL_SIZE) for key, values in
-                           available_models.items() if key.endswith("cpu")])
+        used_memory = sum(
+            available_models[key].get(
+                "model_size", constants.DEFAULT_MODEL_SIZE
+            )
+            for key, values in available_models.items()
+            if key.endswith("cpu")
+        )
         threshold = float(read_env_vars_and_defaults(EnvVars.MARQO_MAX_CPU_MODEL_MEMORY))
     else:
         raise ModelCacheManagementError(
@@ -388,7 +408,7 @@ def _check_output_type(output: List[List[float]]) -> bool:
 
     if not isinstance(output, list):
         return False
-    elif len(output) == 0:
+    elif not output:
         raise ValueError("received empty input")
 
     if not isinstance(output[0], list):
@@ -397,10 +417,7 @@ def _check_output_type(output: List[List[float]]) -> bool:
         raise ValueError("received empty input")
 
     # this is a soft check for speed reasons
-    if not isinstance(output[0][0], (float, int)):
-        return False
-
-    return True
+    return isinstance(output[0][0], (float, int))
 
 
 def _float_tensor_to_list(output: FloatTensor) -> Union[
@@ -523,23 +540,21 @@ def eject_model(model_name: str, device: str):
     # we can't handle the situation where there are two models with the same name and device
     # but different properties.
     for key in model_cache_keys:
-        if isinstance(key, str):
-            if key.startswith(model_name) and key.endswith(device):
-                model_cache_key = key
-                break
-        else:
+        if not isinstance(key, str):
             continue
 
+        if key.startswith(model_name) and key.endswith(device):
+            model_cache_key = key
+            break
     if model_cache_key is None:
         raise ModelNotInCacheError(f"The model_name `{model_name}` device `{device}` is not cached or found")
 
-    if model_cache_key in available_models:
-        del available_models[model_cache_key]
-        if device.startswith("cuda"):
-            torch.cuda.empty_cache()
-        return {"result": "success", "message": f"successfully eject model_name `{model_name}` from device `{device}`"}
-    else:
+    if model_cache_key not in available_models:
         raise ModelNotInCacheError(f"The model_name `{model_name}` device `{device}` is not cached or found")
+    del available_models[model_cache_key]
+    if device.startswith("cuda"):
+        torch.cuda.empty_cache()
+    return {"result": "success", "message": f"successfully eject model_name `{model_name}` from device `{device}`"}
 
 # def normalize(inputs):
 

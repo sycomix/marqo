@@ -33,8 +33,6 @@ class TestScoreModifiersSearch(MarqoTestCase):
                     IndexSettingsField.normalizeEmbeddings: True
                 }
             })
-        pass
-
         self.test_valid_score_modifiers_list = [ScoreModifier(**x) for x in [
             {
                 # miss one weight
@@ -571,8 +569,6 @@ class TestScoreModifiersBulkSearch(MarqoTestCase):
                     IndexSettingsField.normalizeEmbeddings: True
                 }
             })
-        pass
-
         self.test_valid_score_modifiers_list = [ScoreModifier(**x) for x in [
             {
                 # miss one weight

@@ -60,7 +60,7 @@ def clone_and_replace(src_dir, dest_dir, config):
         dest_path = os.path.join(dest_dir, filename)
         if os.path.isfile(src_path):
             shutil.copy2(src_path, dest_path)
-            if filename == 'hosts.xml' or filename == 'services.xml':
+            if filename in ['hosts.xml', 'services.xml']:
                 continue  # Don't modify these files
 
             replace_values(dest_path, replacements)
@@ -127,7 +127,7 @@ def prepare(args):
 def deploy_eks(args):
     prepare(args)
 
-    print(f"Deploying EKS...")
+    print("Deploying EKS...")
     os.system("eksctl create cluster -f prepared/vespa_cluster.yml")
 
 
@@ -135,7 +135,7 @@ def deploy_services(args):
     prepare(args)
     kubeconfig(args)
 
-    print(f"Deploying services...")
+    print("Deploying services...")
     os.system("kubectl create -f prepared/config/")
 
 
@@ -184,7 +184,7 @@ def delete(args):
     else:
         print("Skipping deletion of services.")
 
-    print(f"Deleting EKS cluster...")
+    print("Deleting EKS cluster...")
     os.system("eksctl delete cluster --force -f prepared/vespa_cluster.yml")
 
 

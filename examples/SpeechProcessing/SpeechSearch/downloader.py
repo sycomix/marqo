@@ -26,8 +26,7 @@ class AudioWrangler:
     def download_from_file(self, file):
         urls = []
         with open(file, "r") as f:
-            for url in f.readlines():
-                urls.append(url.strip())
+            urls.extend(url.strip() for url in f)
         self.multiprocess_read_url_sources(urls)
 
     def multiprocess_read_url_sources(self, sources: List[str]):
@@ -65,7 +64,7 @@ class AudioWrangler:
         with YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
 
-        outf = self.convert_to_wav(outf + ".mp3")
+        outf = self.convert_to_wav(f"{outf}.mp3")
         outf = self._move_to_output(outf)
         return outf
 
@@ -73,7 +72,7 @@ class AudioWrangler:
         outf = os.path.join(
             ABS_FILE_FOLDER,
             self.tmp_dir,
-            hashlib.sha256(url.encode("ascii")).hexdigest() + f".wav",
+            hashlib.sha256(url.encode("ascii")).hexdigest() + ".wav",
         )
         req = urllib.request.Request(url=url, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req) as response, open(outf, "wb") as out_file:
@@ -84,7 +83,7 @@ class AudioWrangler:
 
     def convert_to_wav(self, fpath: str):
         sound = AudioSegment.from_file(fpath)
-        wav_path = "".join([p for p in fpath.split(".")[:-1]]) + ".wav"
+        wav_path = "".join(list(fpath.split(".")[:-1])) + ".wav"
         sound.export(wav_path, format="wav")
         return wav_path
 

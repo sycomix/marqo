@@ -273,7 +273,6 @@ class TestOpenClipModelEncoding(unittest.TestCase):
                                      'open_clip/ViT-B-16/laion2b_s34b_b88k', 'open_clip/convnext_base/laion400m_s13b_b51k',
                                      'open_clip/convnext_base_w/laion_aesthetic_s13b_b82k',
                                      'open_clip/coca_ViT-B-32/mscoco_finetuned_laion2b_s13b_b90k']
-        pass
 
     def tearDown(self) -> None:
         clear_loaded_models()

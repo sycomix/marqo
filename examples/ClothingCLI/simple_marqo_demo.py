@@ -46,31 +46,23 @@ def delete_index(index_name: str):
 
 
 def delete_doc_from_index(index_name:str, doc_ids:list[str]):
-    results = mq.index(index_name).delete_documents(ids=doc_ids)
-    return results
+    return mq.index(index_name).delete_documents(ids=doc_ids)
 
 def search_index_text(index_name:str, query_text: str, search_method: str):
-    results = mq.index(index_name).search(
+    return mq.index(index_name).search(
         q=query_text,
         search_method=search_method,
     )
-    
-    # Marqo also has other features such as searhcing based on a specific attribute field and query fitlering
-    # refer to the documentation on how these features work (https://marqo.pages.dev/)
-    return results
 
 def search_index_image(index_name:str, image_name: str):
     # make sure the image is located inside the directory in which the python http server is running
 
-    image_path = "http://host.docker.internal:8222/" + image_name
+    image_path = f"http://host.docker.internal:8222/{image_name}"
 
-    results = mq.index(index_name).search(image_path)
-    
-    return results
+    return mq.index(index_name).search(image_path)
 
 def get_index_stats(index_name: str) -> dict:
-    results = mq.index(index_name).get_stats()
-    return results
+    return mq.index(index_name).get_stats()
 
 
 
@@ -95,7 +87,7 @@ Action: '''))
             load_index(index_name, no_of_items)
         elif action == 2:
             index_name = input("Index name: ")
-            
+
             delete_index(index_name)
         elif action == 3:
             index_name = input("Index name: ")
@@ -106,7 +98,7 @@ Action: '''))
                 query_text = str(input("Query Text: "))
 
                 results = search_index_text(index_name, query_text, search_mode.upper())
-                
+
                 pprint.pprint(results)
             elif search_type == 'Image':
                 image_name = str(input("Image name (include MIME type .jpg or .png): "))
@@ -114,7 +106,7 @@ Action: '''))
                 results = search_index_image(index_name, image_name)
 
                 pprint.pprint(results)
-            
+
         elif action == 4:
             index_name = input("Index name: ")
             get_index_stats(index_name)
@@ -124,7 +116,7 @@ Action: '''))
             no_of_docs = int(input("No. of documents to delete: "))
             doc_ids = []
 
-            for i in range(no_of_docs):
+            for _ in range(no_of_docs):
                 doc_id = input("Document ID: ")
                 doc_ids.append(doc_id)
 

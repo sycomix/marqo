@@ -384,25 +384,19 @@ class TestLexicalSearch(MarqoTestCase):
             if "required_terms" in case:
                 for hit in res["hits"]:
                     for term in case["required_terms"]:
-                        term_found = False
-
-                        for field in fields:
-                            if term in hit[field]:
-                                term_found = True
-                                break
-                        
+                        term_found = any(term in hit[field] for field in fields)
                         assert term_found
-            
+
             if "first_n_results_unordered" in case:
                 n = len(case["first_n_results_unordered"])
                 assert set(id_only_hits[:n]) == set(case["first_n_results_unordered"]) 
-            
+
             if "first_n_results_ordered" in case:
                 n = len(case["first_n_results_ordered"])
                 assert set(id_only_hits[:n]) == set(case["first_n_results_ordered"])
-            
+
             if "no_results" in case:
-                assert len(id_only_hits) == 0
+                assert not id_only_hits
 
     def test_lexical_search_list(self):
         tensor_search.add_documents(

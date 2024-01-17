@@ -752,7 +752,7 @@ class TestSearchUnstructured(MarqoTestCase):
                 )
                 self.assertEqual(expected_count, len(res["hits"]))
                 if expected_ids:
-                    self.assertEqual(set(expected_ids), set([hit["_id"] for hit in res["hits"]]))
+                    self.assertEqual(set(expected_ids), {hit["_id"] for hit in res["hits"]})
 
     def test_attributes_to_retrieve(self):
         docs = [
@@ -823,7 +823,7 @@ class TestSearchUnstructured(MarqoTestCase):
                 with self.subTest(f"search_method={search_method}, max_doc={max_doc}"):
                     mock_environ = {EnvVars.MARQO_MAX_RETRIEVABLE_DOCS: str(max_doc)}
 
-                    @mock.patch.dict(os.environ, {**os.environ, **mock_environ})
+                    @mock.patch.dict(os.environ, **os.environ | mock_environ)
                     def run():
                         res = half_search = tensor_search.search(
                             search_method=search_method,

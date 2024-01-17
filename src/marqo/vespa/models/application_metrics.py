@@ -91,14 +91,15 @@ class ApplicationMetrics(BaseModel):
                 if service_name is not None and service.name != service_name:
                     continue
 
-                for metric_set in service.metrics:
-                    if metric_name in metric_set.values:
-                        values.append(metric_set.values[metric_name])
-
+                values.extend(
+                    metric_set.values[metric_name]
+                    for metric_set in service.metrics
+                    if metric_name in metric_set.values
+                )
         if aggregation == Aggregation.Count:
             return len(values)
 
-        if len(values) == 0:
+        if not values:
             return None
 
         if aggregation == Aggregation.Max:
