@@ -726,8 +726,9 @@ class TestVectorSearch(MarqoTestCase):
         for res in search_res["hits"]:
             assert docs[res["_id"]]["other field"] == res["other field"]
             assert docs[res["_id"]]["Cool Field 1"] == res["Cool Field 1"]
-            assert set(k for k in res.keys() if k not in TensorField.__dict__.values()) == \
-                   {"other field", "Cool Field 1", "_id"}
+            assert {
+                k for k in res.keys() if k not in TensorField.__dict__.values()
+            } == {"other field", "Cool Field 1", "_id"}
 
     def test_attributes_to_retrieve_lexical(self):
         docs = {
@@ -747,8 +748,9 @@ class TestVectorSearch(MarqoTestCase):
         for res in search_res["hits"]:
             assert docs[res["_id"]]["other field"] == res["other field"]
             assert docs[res["_id"]]["Cool Field 1"] == res["Cool Field 1"]
-            assert set(k for k in res.keys() if k not in TensorField.__dict__.values()) == \
-                   {"other field", "Cool Field 1", "_id"}
+            assert {
+                k for k in res.keys() if k not in TensorField.__dict__.values()
+            } == {"other field", "Cool Field 1", "_id"}
 
     def test_attributes_to_retrieve_empty(self):
         docs = {
@@ -767,7 +769,9 @@ class TestVectorSearch(MarqoTestCase):
             )
             assert len(search_res["hits"]) == 3
             for res in search_res["hits"]:
-                assert set(k for k in res.keys() if k not in TensorField.__dict__.values()) == {"_id"}
+                assert {
+                    k for k in res.keys() if k not in TensorField.__dict__.values()
+                } == {"_id"}
 
     def test_attributes_to_retrieve_empty_index(self):
         assert 0 == tensor_search.get_stats(config=self.config, index_name=self.index_name_1)['numberOfDocuments']
@@ -799,9 +803,11 @@ class TestVectorSearch(MarqoTestCase):
                 assert len(search_res["hits"]) == 3
                 for res in search_res["hits"]:
                     assert "non existing field name" not in res
-                    assert set(k for k in res.keys()
-                               if k not in TensorField.__dict__.values() and k != "_id"
-                               ).issubset(to_retrieve)
+                    assert {
+                        k
+                        for k in res.keys()
+                        if k not in TensorField.__dict__.values() and k != "_id"
+                    }.issubset(to_retrieve)
 
     def test_attributes_to_retrieve_and_searchable_attribs(self):
         docs = {
@@ -829,9 +835,11 @@ class TestVectorSearch(MarqoTestCase):
                 assert set(expected_ids) == {h['_id'] for h in search_res["hits"]}
                 for res in search_res["hits"]:
                     relevant_fields = set(expected_fields).intersection(set(docs[res["_id"]].keys()))
-                    assert set(k for k in res.keys()
-                               if k not in TensorField.__dict__.values() and k != "_id"
-                               ) == relevant_fields
+                    assert {
+                        k
+                        for k in res.keys()
+                        if k not in TensorField.__dict__.values() and k != "_id"
+                    } == relevant_fields
 
     def test_attributes_to_retrieve_non_list(self):
         add_docs_caller(config=self.config, index_name=self.index_name_1,
@@ -864,7 +872,7 @@ class TestVectorSearch(MarqoTestCase):
             for max_doc in [0, 1, 2, 5, 10, 100, 1000]:
                 mock_environ = {EnvVars.MARQO_MAX_RETRIEVABLE_DOCS: str(max_doc)}
 
-                @mock.patch.dict(os.environ, {**os.environ, **mock_environ})
+                @mock.patch.dict(os.environ, **os.environ | mock_environ)
                 def run():
                     half_search = tensor_search.search(search_method=search_method,
                                                        config=self.config, index_name=self.index_name_1, text='a',
@@ -889,6 +897,7 @@ class TestVectorSearch(MarqoTestCase):
                     except IllegalRequestedDocCount:
                         pass
                     return True
+
             assert run()
 
     def test_limit_results_none(self):

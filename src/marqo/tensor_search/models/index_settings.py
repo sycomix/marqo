@@ -46,7 +46,7 @@ class IndexSettings(StrictBaseModel):
     def validate_field_names(cls, values):
         # Verify no snake case field names (pydantic won't catch these due to allow_population_by_field_name = True)
         def validate_dict_keys(d: dict):
-            for key in d.keys():
+            for key in d:
                 if '_' in key:
                     raise ValueError(f"Invalid field name '{key}'. "
                                      f"See Create Index API reference here https://docs.marqo.ai/2.0.0/API-Reference/Indexes/create_index/")

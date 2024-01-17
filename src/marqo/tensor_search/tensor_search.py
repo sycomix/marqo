@@ -163,7 +163,7 @@ def _add_documents_unstructured(config: Config, add_docs_params: AddDocsParams, 
         if add_docs_params.use_existing_tensors:
             ids = [doc["_id"] for doc in add_docs_params.docs if "_id" in doc]
             existing_docs_dict: Dict[str, dict] = {}
-            if len(ids) > 0:
+            if ids:
                 existing_docs = get_documents_by_ids(config, marqo_index.name, ids, show_vectors=True,
                                                      ignore_invalid_ids=True)['results']
                 for doc in existing_docs:
@@ -255,7 +255,7 @@ def _add_documents_unstructured(config: Config, add_docs_params: AddDocsParams, 
                         logger.debug(f"Found document but not tensors for field {field} for doc {doc_id}. "
                                      f"Is this a new tensor field?")
 
-                if len(chunks) == 0:  # Not using existing tensors or didn't find it
+                if not chunks:  # Not using existing tensors or didn't find it
                     if isinstance(field_content, (str, Image.Image)):
                         # 1. check if urls should be downloaded -> "treat_pointers_and_urls_as_images":True
                         # 2. check if it is a url or pointer
@@ -316,7 +316,7 @@ def _add_documents_unstructured(config: Config, add_docs_params: AddDocsParams, 
 
                             # ADD DOCS TIMER-LOGGER (4)
                             start_time = timer()
-                            with RequestMetricsStore.for_request().time(f"add_documents.create_vectors"):
+                            with RequestMetricsStore.for_request().time("add_documents.create_vectors"):
                                 vector_chunks = s2_inference.vectorise(
                                     model_name=marqo_index.model.name,
                                     model_properties=marqo_index.model.get_properties(), content=content_chunks,
@@ -434,7 +434,7 @@ def _add_documents_unstructured(config: Config, add_docs_params: AddDocsParams, 
 
             if document_is_valid:
                 if processed_tensor_fields:
-                    processed_marqo_embeddings = {k: v for k, v in enumerate(embeddings_list)}
+                    processed_marqo_embeddings = dict(enumerate(embeddings_list))
                     assert len(processed_tensor_fields) == len(
                         processed_marqo_embeddings), "Chunks and embeddings must be the same length"
                     copied[constants.MARQO_DOC_CHUNKS] = processed_tensor_fields

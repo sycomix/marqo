@@ -25,7 +25,7 @@ class Timer:
     def start(self) -> None:
         """Start a new timer"""
         if self.start_time is not None:
-            logger.warn(f"'.start()' called on already running timer.")
+            logger.warn("'.start()' called on already running timer.")
         else:
             self.start_time = time.perf_counter()
 
@@ -36,18 +36,17 @@ class Timer:
         """
         if self.start_time is None:
             raise TimerError(
-                f"'.stop()' called on unstarted timer. '.start()' must be called before '.stop()'."
+                "'.stop()' called on unstarted timer. '.start()' must be called before '.stop()'."
             )
-        else:
-            elapsed_time = time.perf_counter() - self.start_time
-            self.start_time = None
-            return 1000 * elapsed_time
+        elapsed_time = time.perf_counter() - self.start_time
+        self.start_time = None
+        return 1000 * elapsed_time
 
 
 class RequestMetrics:
     @classmethod
     def reduce_from_list(cls, metrics: List["RequestMetrics"]) -> "RequestMetrics":
-        assert len(metrics) > 0, "Cannot create RequestMetrics from []"
+        assert metrics, "Cannot create RequestMetrics from []"
         m = metrics.pop(0)
         for mm in metrics:
             for k, count in mm.counter.items():

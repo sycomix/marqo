@@ -50,23 +50,21 @@ def _keep_topk(boxes_xyxy: Union[ndarray, FloatTensor], k: int = 10) -> Union[nd
     if k == 0:
         return []
 
-    if len(boxes_xyxy) <= k:
-        return boxes_xyxy
-
-    return boxes_xyxy[:k]
+    return boxes_xyxy if len(boxes_xyxy) <= k else boxes_xyxy[:k]
 
 def _get_onnx_provider(device: str) -> str:
     """determine where the model should run based on specified device
     """
     onnxproviders = onnxruntime.get_available_providers()
     logger.info(f"device:{device} and available providers {onnxproviders}")
-    if device == 'cpu':
+    if (
+        device != 'cpu'
+        and 'CUDAExecutionProvider' not in onnxproviders
+        or device == 'cpu'
+    ):
         fast_onnxprovider = 'CPUExecutionProvider'
     else:
-        if 'CUDAExecutionProvider' not in onnxproviders:
-            fast_onnxprovider = 'CPUExecutionProvider'
-        else:
-            fast_onnxprovider = 'CUDAExecutionProvider'
+        fast_onnxprovider = 'CUDAExecutionProvider'
 
     logger.info(f"onnx_provider:{fast_onnxprovider}")
     return fast_onnxprovider
@@ -107,13 +105,8 @@ def calc_area(bboxes: Union[List[List], FloatTensor, ndarray], size: Union[None,
         List[Float]: a list of areas
     """
 
-    if size is None:
-        A = 1.0
-    else:
-        A = size[0]*size[1]*1.0
-    areas = [(bb[2]-bb[0])*(bb[3]-bb[1])/A for bb in bboxes]
-
-    return areas
+    A = 1.0 if size is None else size[0]*size[1]*1.0
+    return [(bb[2]-bb[0])*(bb[3]-bb[1])/A for bb in bboxes]
 
 def filter_boxes(bboxes: Union[FloatTensor, ndarray], max_aspect_ratio: int = 4, 
                     min_area: int = 40*40) -> List[int]:
@@ -210,7 +203,7 @@ def str2bool(string: str) -> bool:
     Returns:
         bool: 
     """
-    return string.lower() in ("true", "1", "t")
+    return string.lower() in {"true", "1", "t"}
 
 def replace_small_boxes(boxes: Union[List[List[float]], List[Tuple[float]], ndarray], 
                 min_area: float = 40*40, new_size: Tuple = (100,100)) -> List[Tuple]:

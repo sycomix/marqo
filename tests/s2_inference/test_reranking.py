@@ -139,13 +139,13 @@ class TestReranking(unittest.TestCase):
 
         # this is used as inputs to a model
         inputs_df = results_lexical_formatted.format_for_model(results_lexical_formatted.results_df, results_lexical_formatted.searchable_fields, query=query)
-    
+
         # we verify the size by taking the number of searchablke attributes across all docs (=3) time the number of docs (=3) minus the ones that were not present
         # = 2 since [1] and [2] are each missing a field 
         assert len(inputs_df) == (len(results_lexical_formatted.searchable_fields)*len(results_lexical['hits']) - 2)
 
         # check the query
-        assert set(inputs_df['query'].to_list()) == set([query])
+        assert set(inputs_df['query'].to_list()) == {query}
 
         # check the field content 
         assert all(inputs_df['field_content'].notna()) and all(inputs_df['field_content'].notnull())
@@ -208,7 +208,7 @@ class TestReranking(unittest.TestCase):
         assert isinstance(rr.split_method, str)
 
         # loading the model
-        assert rr.model == None
+        assert rr.model is None
         rr.load_model()
         assert isinstance(rr.model, DummyModel)
 

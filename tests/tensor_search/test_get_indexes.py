@@ -10,7 +10,7 @@ from tests.marqo_test import MarqoTestCase
 
 def _index_is_present(index_name, index_results):
     """True IFF index name is in the results of a get_indexes call"""
-    return any([index_name in res.values() for res in index_results['results']])
+    return any(index_name in res.values() for res in index_results['results'])
 
 
 @unittest.skip

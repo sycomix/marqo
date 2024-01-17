@@ -24,15 +24,14 @@ def format_vespa_schema(file_path):
             elif char == '}':
                 indent_level = max(0, indent_level - 1)
                 new_line += '}'
-            else:
-                if char == ' ' and i < len(stripped_line) - 1 and stripped_line[i + 1] in '{}':
-                    continue  # Skip space before '{' or '}'
+            elif (
+                char != ' '
+                or i >= len(stripped_line) - 1
+                or stripped_line[i + 1] not in '{}'
+            ):
                 new_line += char
 
-        # Handle collapsed empty braces
-        new_line = new_line.replace('{ }', '{}').replace('{  }', '{}')
-
-        if new_line:  # Add the processed line with indentation
+        if new_line := new_line.replace('{ }', '{}').replace('{  }', '{}'):
             formatted_line = (' ' * (indent_size * indent_level)) + new_line + "\n"
             formatted_lines.append(formatted_line)
 

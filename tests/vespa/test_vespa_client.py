@@ -196,8 +196,8 @@ class TestFeedDocumentAsync(AsyncMarqoTestCase):
 
         self.assertEqual(len(result.root.children), 2)
 
-        titles = set([child.fields["title"] for child in result.root.children])
-        contents = set([child.fields["contents"] for child in result.root.children])
+        titles = {child.fields["title"] for child in result.root.children}
+        contents = {child.fields["contents"] for child in result.root.children}
 
         self.assertEqual(titles, {"Title 1"})
         self.assertEqual(contents, {"Content 1", "Content 1.1"})

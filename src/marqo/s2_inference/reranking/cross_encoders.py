@@ -70,7 +70,7 @@ class FormattedResults:
                 return None
             elif isinstance(content, (dict, defaultdict)):
                 _key = list(content.keys())
-                if len(_key) == 0:
+                if not _key:
                     return None
                 if len(_key) > 1:
                     logger.warning(f"found more than 1 highlight. found {_key}. keeping the first only...")
@@ -116,7 +116,7 @@ class FormattedResults:
         """
         # we want the output here to be tuples of the attribute content,query, id and attribute that was used
         # the first two will go to the model while the latter will be used to report the results
-        
+
         # the number 1.0 is arbitrary to some degree (depends on how scores get combined)
         if ResultsFields.original_score not in results_df:
             results_df[ResultsFields.original_score] = 1.0
@@ -131,7 +131,7 @@ class FormattedResults:
             _inputs_df = _inputs_df[_inputs_df[field].notna()] 
 
             if len(_inputs_df) > 0:
-                
+
                 _inputs_df[Columns.query] = query
 
                 # we keep it in case we want to do hybrid search
@@ -142,10 +142,17 @@ class FormattedResults:
                 fields_to_keep = [Columns.query, field, ResultsFields.reranked_id, Columns.field_name, ResultsFields.original_score]
 
                 inputs += _inputs_df[fields_to_keep].values.tolist()
-            
-        inputs_df = pd.DataFrame(inputs, columns=[Columns.query, Columns.field_content, ResultsFields.reranked_id, Columns.original_field_name,  ResultsFields.original_score])
-        
-        return inputs_df
+
+        return pd.DataFrame(
+            inputs,
+            columns=[
+                Columns.query,
+                Columns.field_content,
+                ResultsFields.reranked_id,
+                Columns.original_field_name,
+                ResultsFields.original_score,
+            ],
+        )
 
 class ReRanker:
     """base class for the rerankers

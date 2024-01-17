@@ -47,7 +47,7 @@ class TestUtils(unittest.TestCase):
             ("cuda:1", 2, True),
             ("cuda:2", 2, False),
         ]:
-            mock_cuda_is_available.return_value = True if num_cuda_devices > 0 else False
+            mock_cuda_is_available.return_value = num_cuda_devices > 0
             mock_cuda_device_count.return_value = num_cuda_devices
 
             @mock.patch("torch.cuda.is_available", mock_cuda_is_available)
@@ -290,7 +290,7 @@ class TestUtils(unittest.TestCase):
         os.chdir(os.path.dirname(pathlib.Path.home()))
         new_dir = os.getcwd()
         # ensure we are in a different place
-        assert str(new_dir) != str(original_dir)
+        assert new_dir != original_dir
         # marqo_root should still be equal:
         self.assertEqual(utils._get_marqo_root(), original_marqo_root)
         # reset cwd
@@ -312,7 +312,7 @@ class TestUtils(unittest.TestCase):
         os.chdir(os.path.dirname(pathlib.Path.home()))
         new_dir = os.getcwd()
         # ensure we are in a different place
-        assert str(new_dir) != str(original_dir)
+        assert new_dir != original_dir
         # marqo_root should still be equal:
         self.assertEqual(utils.get_marqo_root_from_env(), original_marqo_root)
         # reset cwd

@@ -29,8 +29,8 @@ def validate_query(q: Union[dict, str], search_method: Union[str, SearchMethod])
                 "Multi-query search requires at least one query! Received empty dictionary. "
                 f"{usage_ref}"
             )
+        base_invalid_kv_message = "Multi queries dictionaries must be <string>:<float> pairs. "
         for k, v in q.items():
-            base_invalid_kv_message = "Multi queries dictionaries must be <string>:<float> pairs. "
             if not isinstance(k, str):
                 raise InvalidArgError(
                     f"{base_invalid_kv_message}Found key of type `{type(k)}` instead of string. Key=`{k}`"
@@ -66,7 +66,7 @@ def validate_searchable_attributes(searchable_attributes: Optional[List[str]], s
 
     if searchable_attributes is None:
         raise InvalidArgError(
-            f"No searchable_attributes provided, but environment variable `MARQO_MAX_SEARCHABLE_TENSOR_ATTRIBUTES` is set."
+            "No searchable_attributes provided, but environment variable `MARQO_MAX_SEARCHABLE_TENSOR_ATTRIBUTES` is set."
         )
 
     if len(searchable_attributes) > int(maximum_searchable_attributes):
@@ -83,10 +83,10 @@ def validate_str_against_enum(value: Any, enum_class: Type[Enum], case_sensitive
     """
 
     if case_sensitive:
-        enum_values = set(item.value for item in enum_class)
+        enum_values = {item.value for item in enum_class}
         to_test_value = value
     else:
-        enum_values = set(item.value.upper() for item in enum_class)
+        enum_values = {item.value.upper() for item in enum_class}
         to_test_value = value.upper()
 
     if to_test_value not in enum_values:
@@ -106,10 +106,7 @@ def list_types_valid(field_content: List) -> bool:
     list_type = type(field_content[0])
     if list_type not in [int, float, str]:
         return False
-    for element in field_content:
-        if type(element) != list_type:
-            return False
-    return True
+    return all(type(element) == list_type for element in field_content)
 
 
 def validate_list(field_content: List, is_non_tensor_field: bool):
@@ -138,16 +135,15 @@ def validate_field_content(field_content: Any, is_non_tensor_field: bool) -> Any
     Raises:
         InvalidArgError if field_content is not acceptable
     """
-    if type(field_content) in constants.ALLOWED_UNSTRUCTURED_FIELD_TYPES:
-        if isinstance(field_content, list):
-            validate_list(field_content, is_non_tensor_field)
-        return field_content
-    else:
+    if type(field_content) not in constants.ALLOWED_UNSTRUCTURED_FIELD_TYPES:
         raise InvalidArgError(
             f"Field content `{field_content}` \n"
             f"of type `{type(field_content).__name__}` is not of valid content type!"
             f"Allowed content types: {[ty.__name__ for ty in constants.ALLOWED_UNSTRUCTURED_FIELD_TYPES]}"
         )
+    if isinstance(field_content, list):
+        validate_list(field_content, is_non_tensor_field)
+    return field_content
 
 
 def validate_context(context: Optional[SearchContext], search_method: SearchMethod, query: Union[str, Dict[str, Any]]):
@@ -189,9 +185,9 @@ def validate_boost(boost: Dict, search_method: Union[str, SearchMethod]):
                 f'Boost must be a dictionary. Instead received boost of value `{boost}`'
                 f'{further_info_message}'
             )
+        base_invalid_kv_message = (
+            "Boost dictionaries have structure <attribute (string)>: <[weight (float), bias (float)]>\n")
         for k, v in boost.items():
-            base_invalid_kv_message = (
-                "Boost dictionaries have structure <attribute (string)>: <[weight (float), bias (float)]>\n")
             if not isinstance(k, str):
                 raise InvalidArgError(
                     f'{base_invalid_kv_message}Found key of type `{type(k)}` instead of string. Key=`{k}`'
@@ -394,14 +390,16 @@ def validate_multimodal_combination(field_content, is_non_tensor_field, field_ma
             f"please check `https://docs.marqo.ai/0.1.0/Advanced-Usage/document_fields/#multimodal-combination-object` for more info.")
 
     for key, value in field_content.items():
-        if not ((type(key) in constants.ALLOWED_MULTIMODAL_FIELD_TYPES) and (
-                type(value) in constants.ALLOWED_MULTIMODAL_FIELD_TYPES)):
+        if (
+            type(key) not in constants.ALLOWED_MULTIMODAL_FIELD_TYPES
+            or type(value) not in constants.ALLOWED_MULTIMODAL_FIELD_TYPES
+        ):
             raise InvalidArgError(
                 f"Multimodal-combination field content `{key}:{value}` \n  "
                 f"of type `{type(key).__name__} : {type(value).__name__}` is not of valid content type (one of {constants.ALLOWED_MULTIMODAL_FIELD_TYPES})."
             )
 
-        if not key in field_mapping["weights"]:
+        if key not in field_mapping["weights"]:
             raise InvalidArgError(
                 f"Multimodal-combination field content `{key}:{value}` \n  "
                 f"is not in the multimodal_field mappings weights `{field_mapping['weights']}`. Each sub_field requires a weight."

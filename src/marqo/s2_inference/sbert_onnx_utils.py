@@ -83,13 +83,14 @@ class SBERT_ONNX(object):
         """
         self.onnxproviders = onnxruntime.get_available_providers()
         logger.info(f"device:{self.device} and available providers {self.onnxproviders}")
-        if self.device == 'cpu':
+        if (
+            self.device != 'cpu'
+            and 'CUDAExecutionProvider' not in self.onnxproviders
+            or self.device == 'cpu'
+        ):
             self.fast_onnxprovider = 'CPUExecutionProvider'
         else:
-            if 'CUDAExecutionProvider' not in self.onnxproviders:
-                self.fast_onnxprovider = 'CPUExecutionProvider'
-            else:
-                self.fast_onnxprovider = 'CUDAExecutionProvider'
+            self.fast_onnxprovider = 'CUDAExecutionProvider'
 
         logger.info(f"onnx_provider:{self.fast_onnxprovider}")
 
@@ -212,10 +213,7 @@ class SBERT_ONNX(object):
         ort_outputs = self.session.run(None, ort_inputs)
         result = self.mean_pooling(token_embeddings=torch.FloatTensor(ort_outputs[0]),
                                                         attention_mask=inputs.get('attention_mask'))
-        if normalize:
-            return self.normalize(result)
-
-        return result
+        return self.normalize(result) if normalize else result
 
 
     

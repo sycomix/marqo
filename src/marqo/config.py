@@ -35,10 +35,12 @@ class Config:
         local_host_markers = ["localhost", "0.0.0.0", "127.0.0.1"]
 
         if any(
-                [
-                    marker in url
-                    for marker in local_host_markers
-                    for url in [vespa_client.config_url, vespa_client.query_url, vespa_client.document_url]
-                ]
+            marker in url
+            for marker in local_host_markers
+            for url in [
+                vespa_client.config_url,
+                vespa_client.query_url,
+                vespa_client.document_url,
+            ]
         ):
             self.cluster_is_remote = False

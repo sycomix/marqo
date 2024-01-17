@@ -36,15 +36,27 @@ class TestOutputs(unittest.TestCase):
         for name in names:
             for device in devices:
                 model_properties = get_model_properties_from_registry(name)
-                assert (
-                            _create_model_cache_key(name, device, model_properties)
-                            == (
-                               name + "||"
-                               + model_properties.get('name', '') + "||"
-                               + str(model_properties.get('dimensions', '')) + "||"
-                               + model_properties.get('type', '') + "||"
-                               + str(model_properties.get('tokens', '')) + "||"
-                               + device)
+                assert _create_model_cache_key(name, device, model_properties) == (
+                    (
+                        (
+                            (
+                                (
+                                    (
+                                        f"{name}||"
+                                        + model_properties.get('name', '')
+                                    )
+                                    + "||"
+                                )
+                                + str(model_properties.get('dimensions', ''))
+                                + "||"
+                            )
+                            + model_properties.get('type', '')
+                            + "||"
+                        )
+                        + str(model_properties.get('tokens', ''))
+                        + "||"
+                    )
+                    + device
                 )
 
     def test_clear_model_cache(self):

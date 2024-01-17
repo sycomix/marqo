@@ -28,7 +28,7 @@ BICUBIC = InterpolationMode.BICUBIC
 
 
 def get_allowed_image_types():
-    return set(('.jpg', '.png', '.bmp', '.jpeg'))
+    return {'.jpg', '.png', '.bmp', '.jpeg'}
 
 
 def _convert_image_to_rgb(image: ImageType) -> ImageType:
@@ -74,11 +74,10 @@ def format_and_load_CLIP_images(images: List[Union[str, ndarray, ImageType]], im
     if not isinstance(images, list):
         raise TypeError(f"expected list but received {type(images)}")
 
-    results = []
-    for image in images:
-        results.append(format_and_load_CLIP_image(image, image_download_headers))
-    
-    return results
+    return [
+        format_and_load_CLIP_image(image, image_download_headers)
+        for image in images
+    ]
 
 
 def load_image_from_path(image_path: str, image_download_headers: dict, timeout=3,
@@ -157,7 +156,7 @@ def _is_image(inputs: Union[str, List[Union[str, ImageType, ndarray]]]) -> bool:
     # some logic to determine if something is an image or not
     # assume the batch is the same type
     # maybe we use something like this https://github.com/ahupp/python-magic
-    
+
     _allowed = get_allowed_image_types()
 
     # we assume the batch is this way if a list
@@ -170,28 +169,25 @@ def _is_image(inputs: Union[str, List[Union[str, ImageType, ndarray]]]) -> bool:
         thing = inputs[0]
     else:
         thing = inputs
-    
+
     # if it is a string, determine if it is a local file or url
     if isinstance(thing, str):
         name, extension = os.path.splitext(thing.lower())
-        
+
         # if it has the correct extension, asssume yes
         if extension in _allowed:
             return True
-        
-        # if it is a local file without extension, then raise an error
+
         if os.path.isfile(thing):
             # we could also read the first part of the file and infer
             raise UnidentifiedImageError(f"local file [{thing}] extension {extension} does not match allowed file types of {_allowed}")
+        # if it is not a local file and does not have an extension
+        # check if url
+        if validators.url(thing):
+            return True
         else:
-            # if it is not a local file and does not have an extension
-            # check if url
-            if validators.url(thing):
-                return True
-            else:
-                False
+            False
 
-    # if it is an array, then it is an image
     elif isinstance(thing, (ImageType, ndarray)):
         return True
     else:
@@ -260,7 +256,6 @@ class CLIP:
             # https://github.com/openai/CLIP/issues/30
             self.model, self.preprocess = clip.load(self.model_type, device='cpu', jit=False, download_root=ModelCache.clip_cache_path)
             self.model = self.model.to(self.device)
-            self.tokenizer = clip.tokenize
         else:
             logger.info("Detecting custom clip model path. We use generic clip model loading.")
             if path and model_location_presence:
@@ -282,9 +277,9 @@ class CLIP:
 
             self.jit = self.model_properties.get("jit", False)
             self.model, self.preprocess = self.custom_clip_load()
-            self.tokenizer = clip.tokenize
-
             self.model.eval()
+
+        self.tokenizer = clip.tokenize
 
     def custom_clip_load(self):
         self.model_name = self.model_properties.get("name", None)
@@ -416,7 +411,6 @@ class OPEN_CLIP(CLIP):
                                                                                    pretrained=self.pretrained,
                                                                                    device=self.device, jit=False, cache_dir=ModelCache.clip_cache_path)
             self.tokenizer = open_clip.get_tokenizer(self.model_name)
-            self.model.eval()
         else:
             if path and model_location_presence:
                 raise InvalidModelPropertiesError(
@@ -444,7 +438,8 @@ class OPEN_CLIP(CLIP):
             self.model, self.preprocess = self.custom_clip_load()
             self.tokenizer = self.load_tokenizer()
 
-            self.model.eval()
+
+        self.model.eval()
 
     def custom_clip_load(self):
         self.model_name = self.model_properties.get("name", None)
@@ -499,9 +494,8 @@ class OPEN_CLIP(CLIP):
 
         if tokenizer_name == "clip":
             return open_clip.tokenize
-        else:
-            logger.info(f"Custom HFTokenizer is provided. Loading...")
-            return HFTokenizer(tokenizer_name)
+        logger.info("Custom HFTokenizer is provided. Loading...")
+        return HFTokenizer(tokenizer_name)
 
 
     def encode_image(self, images: Union[str, ImageType, List[Union[str, ImageType]]],
@@ -638,46 +632,36 @@ class MULTILINGUAL_CLIP(CLIP):
 
 def get_multilingual_clip_properties() -> Dict:
     """This is moved here from the model registry to avoid a circular import"""
-    # Models are from github repo
-    # https://github.com/FreddeFrallan/Multilingual-CLIP
-    MULTILINGUAL_CLIP_PROPERTIES = {
-        "multilingual-clip/XLM-Roberta-Large-Vit-L-14":
-            {
-                "name": "multilingual-clip/XLM-Roberta-Large-Vit-L-14",
-                "visual_model": "openai/ViT-L/14",
-                "textual_model": 'M-CLIP/XLM-Roberta-Large-Vit-L-14',
-                "dimensions": 768,
-                "type": "multilingual_clip",
-            },
-
-        "multilingual-clip/XLM-R Large Vit-B/16+":
-            {
-                "name": "multilingual-clip/XLM-R Large Vit-B/16+",
-                "visual_model": "open_clip/ViT-B-16-plus-240/laion400m_e32",
-                "textual_model": 'M-CLIP/XLM-Roberta-Large-Vit-B-16Plus',
-                "dimensions": 640,
-                "type": "multilingual_clip",
-            },
-
-        "multilingual-clip/XLM-Roberta-Large-Vit-B-32":
-            {
-                "name": "multilingual-clip/XLM-Roberta-Large-Vit-B-32",
-                "visual_model": "openai/ViT-B/32",
-                "textual_model": 'M-CLIP/XLM-Roberta-Large-Vit-B-32',
-                "dimensions": 512,
-                "type": "multilingual_clip",
-            },
-
-        "multilingual-clip/LABSE-Vit-L-14":
-            {
-                "name": "multilingual-clip/LABSE-Vit-L-14",
-                "visual_model": "openai/ViT-L/14",
-                "textual_model": 'M-CLIP/LABSE-Vit-L-14',
-                "dimensions": 768,
-                "type": "multilingual_clip",
-            }
+    return {
+        "multilingual-clip/XLM-Roberta-Large-Vit-L-14": {
+            "name": "multilingual-clip/XLM-Roberta-Large-Vit-L-14",
+            "visual_model": "openai/ViT-L/14",
+            "textual_model": 'M-CLIP/XLM-Roberta-Large-Vit-L-14',
+            "dimensions": 768,
+            "type": "multilingual_clip",
+        },
+        "multilingual-clip/XLM-R Large Vit-B/16+": {
+            "name": "multilingual-clip/XLM-R Large Vit-B/16+",
+            "visual_model": "open_clip/ViT-B-16-plus-240/laion400m_e32",
+            "textual_model": 'M-CLIP/XLM-Roberta-Large-Vit-B-16Plus',
+            "dimensions": 640,
+            "type": "multilingual_clip",
+        },
+        "multilingual-clip/XLM-Roberta-Large-Vit-B-32": {
+            "name": "multilingual-clip/XLM-Roberta-Large-Vit-B-32",
+            "visual_model": "openai/ViT-B/32",
+            "textual_model": 'M-CLIP/XLM-Roberta-Large-Vit-B-32',
+            "dimensions": 512,
+            "type": "multilingual_clip",
+        },
+        "multilingual-clip/LABSE-Vit-L-14": {
+            "name": "multilingual-clip/LABSE-Vit-L-14",
+            "visual_model": "openai/ViT-L/14",
+            "textual_model": 'M-CLIP/LABSE-Vit-L-14',
+            "dimensions": 768,
+            "type": "multilingual_clip",
+        },
     }
-    return MULTILINGUAL_CLIP_PROPERTIES
 
 
 

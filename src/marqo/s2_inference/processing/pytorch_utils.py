@@ -21,13 +21,12 @@ def load_pytorch(model_name: str, device: str):
     Returns:
         _type_: _description_
     """
-    if model_name in ('frcnn', 'faster_rcnn'):
-        model, preprocess = load_pytorch_rcnn()
-        model = model.to(device)
-        model.eval()
-    else:
+    if model_name not in {'frcnn', 'faster_rcnn'}:
         raise RuntimeError("incorrect model specified")
 
+    model, preprocess = load_pytorch_rcnn()
+    model = model.to(device)
+    model.eval()
     return model, preprocess
 
 def load_pretrained_mobilenet():

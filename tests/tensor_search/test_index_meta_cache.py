@@ -256,7 +256,7 @@ class TestIndexMetaCache(MarqoTestCase):
              search_method=SearchMethod.TENSOR)
         # With single KNN Field, correct result appears even when field is not in cache!
         assert "1234" in [h["_id"] for h in result["hits"]]
-        assert len([h["_id"] for h in result["hits"]]) > 0
+        assert [h["_id"] for h in result["hits"]]
         result_2 = tensor_search.search(
             index_name=self.index_name_1, config=self.config, text="a line of text",
              search_method=SearchMethod.TENSOR)

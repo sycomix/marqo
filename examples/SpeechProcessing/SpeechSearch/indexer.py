@@ -20,11 +20,9 @@ def index_transcriptions(
         if len(at["transcription"]) > 5 or len({*at["transcription"]}) > 4
     ]
 
-    response = mq.index(index).add_documents(
+    return mq.index(index).add_documents(
         annotated_transcriptions,
         tensor_fields=tensor_fields,
         device=device,
-        client_batch_size=batch_size
+        client_batch_size=batch_size,
     )
-
-    return response

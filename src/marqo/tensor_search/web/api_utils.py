@@ -39,11 +39,7 @@ def translate_api_device(device: Optional[str]) -> Optional[str]:
         matched = [attempt for attempt in match_attempt if attempt[0]][0]
         prefix = matched[2]
         suffix = matched[1]
-        if not suffix:
-            return prefix
-        else:
-            formatted = f"{prefix}:{suffix}"
-            return formatted
+        return prefix if not suffix else f"{prefix}:{suffix}"
     except (IndexError, ValueError) as k:
         raise InvalidArgError(f"Given device `{device}` isn't  a known device type. "
                               f"Acceptable device types: {acceptable_devices}")
@@ -63,13 +59,11 @@ def decode_image_download_headers(image_download_headers: Optional[str] = None) 
     """
     if not image_download_headers:
         return dict()
-    else:
-        try:
-            as_str = urllib.parse.unquote_plus(image_download_headers)
-            as_dict = json.loads(as_str)
-            return as_dict
-        except json.JSONDecodeError as e:
-            raise InvalidArgError(f"Error parsing image_download_headers. Message: {e}")
+    try:
+        as_str = urllib.parse.unquote_plus(image_download_headers)
+        return json.loads(as_str)
+    except json.JSONDecodeError as e:
+        raise InvalidArgError(f"Error parsing image_download_headers. Message: {e}")
 
 
 def decode_query_string_model_auth(model_auth: Optional[str] = None) -> Optional[ModelAuth]:
@@ -86,10 +80,8 @@ def decode_query_string_model_auth(model_auth: Optional[str] = None) -> Optional
     """
     if not model_auth:
         return None
-    else:
-        as_str = urllib.parse.unquote_plus(model_auth)
-        as_objc = ModelAuth.parse_raw(as_str)
-        return as_objc
+    as_str = urllib.parse.unquote_plus(model_auth)
+    return ModelAuth.parse_raw(as_str)
 
 
 def decode_mappings(mappings: Optional[str] = None) -> dict:
@@ -106,13 +98,11 @@ def decode_mappings(mappings: Optional[str] = None) -> dict:
     """
     if not mappings:
         return dict()
-    else:
-        try:
-            as_str = urllib.parse.unquote_plus(mappings)
-            as_dict = json.loads(as_str)
-            return as_dict
-        except json.JSONDecodeError as e:
-            raise InvalidArgError(f"Error parsing mappings. Message: {e}")
+    try:
+        as_str = urllib.parse.unquote_plus(mappings)
+        return json.loads(as_str)
+    except json.JSONDecodeError as e:
+        raise InvalidArgError(f"Error parsing mappings. Message: {e}")
 
 
 def add_docs_params_orchestrator(index_name: str, body: Union[AddDocsBodyParams, List[Dict]],

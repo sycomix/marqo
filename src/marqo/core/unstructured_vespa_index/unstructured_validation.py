@@ -69,10 +69,12 @@ def validate_coupling_of_mappings_and_doc(doc: Dict, mappings: Dict, multimodal_
     if not mappings:
         return
 
-    multimodal_fields = [field_name for field_name, configuration in mappings.items()
-                         if configuration["type"] == enums.MappingsObjectType.multimodal_combination]
-
-    if multimodal_fields:
+    if multimodal_fields := [
+        field_name
+        for field_name, configuration in mappings.items()
+        if configuration["type"]
+        == enums.MappingsObjectType.multimodal_combination
+    ]:
         _validate_conflicts_fields(multimodal_fields, doc)
         _validate_multimodal_sub_fields_content(doc, multimodal_sub_fields)
 

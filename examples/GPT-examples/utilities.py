@@ -32,7 +32,7 @@ def marqo_template():
     """
     holds the prompt template
     """
-    template = """The following is a conversation with a fictional superhero in a movie. 
+    return """The following is a conversation with a fictional superhero in a movie. 
     BACKGROUND is provided which describes some the history and powers of the superhero. 
     The conversation should always be consistent with this BACKGROUND. 
     Continue the conversation as the superhero in the movie and **always** use something from the BACKGROUND. 
@@ -44,14 +44,14 @@ def marqo_template():
     Conversation:
     {conversation}
     """
-    return template
 
 def marqo_prompt(template = marqo_template()):
     """ 
     thin wrapper for prompt creation
     """
-    PROMPT = PromptTemplate(template=template, input_variables=["summaries", "conversation"])
-    return PROMPT
+    return PromptTemplate(
+        template=template, input_variables=["summaries", "conversation"]
+    )
 
 def read_md_file(filename):
     """ 
@@ -107,7 +107,7 @@ def load_data():
     wrapper to load all the data files
     """
     marqo_docs_directory = 'data/'
-    files = glob.glob(marqo_docs_directory + 'p*.txt', recursive=True)
+    files = glob.glob(f'{marqo_docs_directory}p*.txt', recursive=True)
     files = [f for f in files if not f.startswith('_')]
     return load_all_files(files)
 
@@ -124,8 +124,9 @@ def qna_prompt():
     {summaries}
     =========
     ANSWER:"""
-    PROMPT = PromptTemplate(template=template, input_variables=["summaries", "question"])
-    return PROMPT
+    return PromptTemplate(
+        template=template, input_variables=["summaries", "question"]
+    )
 
 model_cache = dict()
 def load_ce(model_name='cross-encoder/ms-marco-MiniLM-L-6-v2'):
@@ -173,17 +174,17 @@ def extract_text_from_highlights(res, token_limit=256, truncate=True):
 
     highlights = []
     texts = []
-    for ind,hit in enumerate(res[ResultsFields.hits]):
+    for hit in res[ResultsFields.hits]:
         highlight_dict = hit[ResultsFields.highlights]
         highlight_key = list(highlight_dict.keys())[0]
         highlight_text = list(highlight_dict.values())[0]
         text = hit[highlight_key]
-    
+
         if truncate:
             text = " ".join(text.split())
             highlight_text = " ".join(highlight_text.split())
             text = truncate_text(text, token_limit, highlight_text)
-            
+
         texts.append(text)
         highlights.append(highlight_text)
 
@@ -231,10 +232,10 @@ def get_token_indices(text: str, token_limit: int,
                 tokenizer = None,
                 offset: int = None):
 
-    # leave it here instead of a paramter
-    default_tokenizer = 'gpt2'
-
     if tokenizer is None:
+        # leave it here instead of a paramter
+        default_tokenizer = 'gpt2'
+
         if default_tokenizer not in cached_tokenizers:
             tokenizer = GPT2TokenizerFast.from_pretrained(default_tokenizer)
             cached_tokenizers[default_tokenizer] = tokenizer
@@ -257,9 +258,7 @@ def get_token_indices(text: str, token_limit: int,
     character_offset_tuple = _find_end_character_mapping(character_offsets, offset)
     token_offset = character_offsets.index(character_offset_tuple[0])
 
-    is_odd_offset = 1
-    if token_limit % 2 == 1: is_odd_offset = 0
-
+    is_odd_offset = 0 if token_limit % 2 == 1 else 1
     if method == 'start':
         ind_start = character_offsets[0]
         ind_end = character_offsets[token_limit-1]
@@ -274,14 +273,14 @@ def get_token_indices(text: str, token_limit: int,
         right_ind = min(center_token + token_limit//2, text_token_len)
         ind_start = character_offsets[left_ind]
         ind_end = character_offsets[right_ind-is_odd_offset]
-    
+
     elif method == 'offset':
         center_token = token_offset 
         left_ind = max(center_token - token_limit//2, 0)
         right_ind = min(center_token + token_limit//2, text_token_len)
         ind_start = character_offsets[left_ind]
         ind_end = character_offsets[right_ind-is_odd_offset]
-    
+
     else: 
         raise RuntimeError("incorrect method specified")
 
@@ -307,27 +306,19 @@ def truncate_text(text, token_limit, highlight=None):
         # now map this to tokens and get the left/right char indices to achieve token limit
 
     ind_left, ind_right = get_token_indices(text, token_limit, method=method, offset=center_ind)
-    trunc_text = text[min(ind_left):max(ind_right)]
-
-    return trunc_text
+    return text[min(ind_left):max(ind_right)]
 
 def check_highlights_field(hit, highlight=ResultsFields.highlights):
     """
     check the validity of the highlights in the hit
     """
 
-    if highlight in hit:
-        if len(hit[highlight]) == 0:
-            return False
-        elif isinstance(hit[highlight], dict):
-            if hit[highlight].values() == 0:
-                return False
-            else:
-                return True
-        else:
-            raise RuntimeError("invalid hits and highlights")
-    else:
+    if highlight in hit and len(hit[highlight]) == 0 or highlight not in hit:
         return False
+    elif isinstance(hit[highlight], dict):
+        return hit[highlight].values() != 0
+    else:
+        raise RuntimeError("invalid hits and highlights")
 
 
 def test_truncate():

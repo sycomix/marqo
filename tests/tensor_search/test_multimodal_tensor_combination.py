@@ -464,7 +464,7 @@ class TestMultimodalTensorCombinationUnstructured(MarqoTestCase):
         mock_multimodal_combination.side_effect = pass_through_multimodal
 
         @mock.patch("marqo.tensor_search.tensor_search.vectorise_multimodal_combination_field_unstructured",
-                    mock_multimodal_combination)
+                        mock_multimodal_combination)
         def run():
             tensor_search.add_documents(config=self.config, add_docs_params=AddDocsParams(
                 index_name=self.random_multimodal_index_name, docs=[
@@ -491,8 +491,10 @@ class TestMultimodalTensorCombinationUnstructured(MarqoTestCase):
                                         )
 
             # first multimodal-doc
-            real_field_0, field_content_0 = [call_args for call_args, call_kwargs
-                                             in mock_multimodal_combination.call_args_list][0][0:2]
+            real_field_0, field_content_0 = [
+                call_args
+                for call_args, call_kwargs in mock_multimodal_combination.call_args_list
+            ][0][:2]
             assert real_field_0 == "combo_text_image"
             assert field_content_0 == {
                 "text_field": "A rider is riding a horse jumping over the barrier.",
@@ -500,8 +502,10 @@ class TestMultimodalTensorCombinationUnstructured(MarqoTestCase):
             }
 
             # second multimodal=doc
-            real_field_1, field_content_1 = [call_args for call_args, call_kwargs
-                                             in mock_multimodal_combination.call_args_list][1][0:2]
+            real_field_1, field_content_1 = [
+                call_args
+                for call_args, call_kwargs in mock_multimodal_combination.call_args_list
+            ][1][:2]
             assert real_field_1 == "combo_text_image"
             assert field_content_1 == {
                 "text_field": "test-text-two.",
@@ -604,9 +608,10 @@ class TestMultimodalTensorCombinationUnstructured(MarqoTestCase):
             self.assertEqual(1, len(mock_vectorise.call_args_list))
 
             text_content = [f"A rider is riding a horse jumping over the barrier_{i}." for i in range(5)]
-            text_content = text_content + [
+            text_content += [
                 f"https://raw.githubusercontent.com/marqo-ai/marqo/mainline/examples/ImageSearchGuide/data/image{i}.jpg"
-                for i in range(5)]
+                for i in range(5)
+            ]
 
             real_text_content = [call_kwargs['content'] for call_args, call_kwargs
                                  in mock_vectorise.call_args_list][0]

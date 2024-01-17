@@ -60,8 +60,7 @@ def load_image(image_file):
     Returns:
         _type_: _description_
     """
-    img = Image.open(image_file)
-    return img
+    return Image.open(image_file)
 
 def draw_box(img, box):
     """draws a rectangle box on a PIL image
@@ -82,7 +81,7 @@ def main():
     #########################################
     # SETUP SOME PARAMTERS
     # this is for temporary storage of an image
-    temp_image_dir = os.getcwd() + '/'
+    temp_image_dir = f'{os.getcwd()}/'
     # the field name for the image
     image_location = 'image_location'
     # some enums
@@ -91,9 +90,9 @@ def main():
 
     # specify the device
     device = 'cuda'
-    
+
     docker_image_server_prefix = 'http://host.docker.internal:8222/'
-    local_image_location = os.getcwd() + '/images/'
+    local_image_location = f'{os.getcwd()}/images/'
 
     #########################################
 
@@ -119,11 +118,7 @@ def main():
     option_reranker = s5.radio('Select the reranker',
                   ['None', "google/owlvit-base-patch32"])
 
-    if option_reranker == 'None':
-        reranker = None
-    else:
-        reranker = option_reranker
-
+    reranker = None if option_reranker == 'None' else option_reranker
     form1 = s1.form(key='my-form1')
     submit1 = form1.form_submit_button('Search with tensor...')
 
@@ -133,18 +128,28 @@ def main():
     image_file = s3.file_uploader("Upload Images", type=["png", "jpg", "jpeg"])
 
     if submit1:
-        st.text("searching using '{}'...".format(sentence))
-        res = client.index(index_name).search("{}".format(sentence), searchable_attributes=[image_location], reranker=reranker, device=device)
+        st.text(f"searching using '{sentence}'...")
+        res = client.index(index_name).search(
+            f"{sentence}",
+            searchable_attributes=[image_location],
+            reranker=reranker,
+            device=device,
+        )
 
         if len(res[hits]) == 0:
             st.text(f"No results found for {sentence}")
         else:
             images = [i[image_location].replace(docker_image_server_prefix, local_image_location) for i in res['hits']]
             render_images(images) 
- 
-    if submit2:       
-        st.text("searching using '{}'...".format(sentence))        
-        res = client.index(index_name).search("{}".format(sentence), searchable_attributes=[image_location], reranker=reranker, device=device)
+
+    if submit2:   
+        st.text(f"searching using '{sentence}'...")
+        res = client.index(index_name).search(
+            f"{sentence}",
+            searchable_attributes=[image_location],
+            reranker=reranker,
+            device=device,
+        )
         # get the image 
         if len(res[hits]) == 0:
             st.text(f"No results found for {sentence}")
@@ -156,23 +161,27 @@ def main():
             # render text
             render_images(images, boxes=boxes)
 
-    
+
     if image_file is not None:
 
         temp_file = NamedTemporaryFile(delete=False)
         if image_file:
             temp_file.write(image_file.getvalue())
-           
+
         save_name = f'{temp_image_dir}temp.png'
         image = load_image(temp_file.name)
         image.save(save_name)
-        
+
         query = save_name.replace(data_dir, docker_image_server_prefix)
         # To View Uploaded Image
         st.image(image, width=250)
 
-        res = client.index(index_name).search("{}".format(query), searchable_attributes=[image_location], 
-                                         limit=9, device=device)
+        res = client.index(index_name).search(
+            f"{query}",
+            searchable_attributes=[image_location],
+            limit=9,
+            device=device,
+        )
 
         # get the image 
         if len(res['hits']) == 0:

@@ -22,7 +22,6 @@ def racing_vectorise_call(test_model, test_content, q):
         q.put(AssertionError)
     except ModelCacheManagementError as e:
         q.put(e)
-        pass
 
 
 class TestAutomaticModelEject(unittest.TestCase):
@@ -173,15 +172,14 @@ class TestAutomaticModelEject(unittest.TestCase):
         test_content = "this is a test"
         test_model = "ViT-B/32"
 
-        threads = []
         q_1 = queue.Queue()
         q_2 = queue.Queue()
         t = threading.Thread(target=normal_vectorise_call, args=(test_model, test_content, q_1))
-        threads.append(t)
+        threads = [t]
         t.start()
 
         num_of_threads = 3
-        for i in range(num_of_threads):
+        for _ in range(num_of_threads):
             t = threading.Thread(target=racing_vectorise_call, args=(test_model, test_content, q_2))
             threads.append(t)
             t.start()
@@ -213,7 +211,7 @@ class TestAutomaticModelEject(unittest.TestCase):
 
         q_2 = queue.Queue()
         num_of_threads = 3
-        for i in range(num_of_threads):
+        for _ in range(num_of_threads):
             t = threading.Thread(target=normal_vectorise_call, args=(test_model, test_content, q_2))
             threads.append(t)
             t.start()

@@ -18,8 +18,8 @@ def download_data(data, download_dir, use_remote=True, in_docker=True, docker_pa
         extract_zip(zip_file, local_dir=local_dir)
         # alternatively you can download the files individually
         #downloaded = download_parallel(urls=data['s3_uri'].tolist(), local_dir=local_dir)
-        locators = glob.glob(local_dir + '*.jpg')
-        
+        locators = glob.glob(f'{local_dir}*.jpg')
+                
 
         # we start an image server for easier access from within docker
         pid = subprocess.Popen(['python3', '-m', 'http.server', '8222', '--directory', local_dir], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)

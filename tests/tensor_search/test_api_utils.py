@@ -184,7 +184,7 @@ class TestAddDocsParamsOrchestrator(unittest.TestCase):
                   "mappings": {"map2": "value2"}}
 
         for param, value in params.items():
-            kwargs = {key: None for key in params.keys()}
+            kwargs = {key: None for key in params}
             kwargs[param] = value
             try:
                 add_docs_params_orchestrator(index_name, body, device, auto_refresh=auto_refresh,

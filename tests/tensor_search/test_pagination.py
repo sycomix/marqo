@@ -63,13 +63,14 @@ class TestPagination(MarqoTestCase):
             for _ in range(0, num_docs, 100):
                 tensor_search.add_documents(
                     config=self.config,
-                    add_docs_params=AddDocsParams(index_name=index.name,
-                                                  docs=[{"title": 'my title'} for i in
-                                                        range(batch_size)],
-                                                  device="cpu",
-                                                  tensor_fields=['title'] if index.type == IndexType.Unstructured
-                                                  else None
-                                                  )
+                    add_docs_params=AddDocsParams(
+                        index_name=index.name,
+                        docs=[{"title": 'my title'} for _ in range(batch_size)],
+                        device="cpu",
+                        tensor_fields=['title']
+                        if index.type == IndexType.Unstructured
+                        else None,
+                    ),
                 )
 
             for search_method in (SearchMethod.LEXICAL, SearchMethod.TENSOR):
@@ -189,7 +190,7 @@ class TestPagination(MarqoTestCase):
         # Going over 10,000 for offset + limit
         mock_environ = {EnvVars.MARQO_MAX_RETRIEVABLE_DOCS: "10000"}
 
-        @mock.patch.dict(os.environ, {**os.environ, **mock_environ})
+        @mock.patch.dict(os.environ, **os.environ | mock_environ)
         def run():
             for search_method in (SearchMethod.LEXICAL, SearchMethod.TENSOR):
                 try:

@@ -47,11 +47,13 @@ class StructuredVespaIndex(VespaIndex):
             vespa_fields[common.FIELD_ID] = vespa_id
 
         # Fields
-        for marqo_field in marqo_document:
-            if marqo_field == constants.MARQO_DOC_TENSORS or marqo_field == constants.MARQO_DOC_ID:
+        for marqo_field, marqo_value in marqo_document.items():
+            if marqo_field in [
+                constants.MARQO_DOC_TENSORS,
+                constants.MARQO_DOC_ID,
+            ]:
                 continue  # process tensor fields later
 
-            marqo_value = marqo_document[marqo_field]
             self._verify_marqo_field_name(marqo_field)
             self._verify_marqo_field_type(marqo_field, marqo_value)
 
@@ -89,11 +91,11 @@ class StructuredVespaIndex(VespaIndex):
 
                 vespa_fields[index_tensor_field.chunk_field_name] = chunks
                 vespa_fields[index_tensor_field.embeddings_field_name] = \
-                    {f'{i}': embeddings[i] for i in range(len(embeddings))}
+                        {f'{i}': embeddings[i] for i in range(len(embeddings))}
 
         vespa_fields[common.FIELD_VECTOR_COUNT] = vector_count
 
-        if len(score_modifiers) > 0:
+        if score_modifiers:
             vespa_fields[common.FIELD_SCORE_MODIFIERS] = score_modifiers
 
         vespa_doc = {
@@ -240,15 +242,12 @@ class StructuredVespaIndex(VespaIndex):
 
         tensor_term = self._get_tensor_search_term(marqo_query) if fields_to_search else "False"
         filter_term = self._get_filter_term(marqo_query)
-        if filter_term:
-            filter_term = f' AND {filter_term}'
-        else:
-            filter_term = ''
+        filter_term = f' AND {filter_term}' if filter_term else ''
         select_attributes = self._get_select_attributes(marqo_query)
         summary = common.SUMMARY_ALL_VECTOR if marqo_query.expose_facets else common.SUMMARY_ALL_NON_VECTOR
         score_modifiers = self._get_score_modifiers(marqo_query)
         ranking = common.RANK_PROFILE_EMBEDDING_SIMILARITY_MODIFIERS if score_modifiers \
-            else common.RANK_PROFILE_EMBEDDING_SIMILARITY
+                else common.RANK_PROFILE_EMBEDDING_SIMILARITY
 
         query_inputs = {
             common.QUERY_INPUT_EMBEDDING: marqo_query.vector_query
@@ -291,16 +290,12 @@ class StructuredVespaIndex(VespaIndex):
 
         lexical_term = self._get_lexical_search_term(marqo_query) if fields_to_search else "False"
         filter_term = self._get_filter_term(marqo_query)
-        if filter_term:
-            filter_term = f' AND {filter_term}'
-        else:
-            filter_term = ''
-
+        filter_term = f' AND {filter_term}' if filter_term else ''
         select_attributes = self._get_select_attributes(marqo_query)
         summary = common.SUMMARY_ALL_VECTOR if marqo_query.expose_facets else common.SUMMARY_ALL_NON_VECTOR
         score_modifiers = self._get_score_modifiers(marqo_query)
         ranking = common.RANK_PROFILE_BM25_MODIFIERS if score_modifiers \
-            else common.RANK_PROFILE_BM25
+                else common.RANK_PROFILE_BM25
 
         query_inputs = {}
         query_inputs.update({
@@ -353,10 +348,7 @@ class StructuredVespaIndex(VespaIndex):
                 f')'
             )
 
-        if terms:
-            return f'({" OR ".join(terms)})'
-        else:
-            return ''
+        return f'({" OR ".join(terms)})' if terms else ''
 
     def _get_filter_term(self, marqo_query: MarqoQuery) -> Optional[str]:
         def escape(s: str) -> str:
@@ -418,34 +410,31 @@ class StructuredVespaIndex(VespaIndex):
         else:
             return '*'
 
-    def _get_score_modifiers(self, marqo_query: MarqoQuery) -> \
-            Optional[Dict[str, Dict[str, float]]]:
-        if marqo_query.score_modifiers:
-            mult_tensor = {}
-            add_tensor = {}
-            for modifier in marqo_query.score_modifiers:
-                if modifier.type == ScoreModifierType.Multiply:
-                    mult_tensor[modifier.field] = modifier.weight
-                elif modifier.type == ScoreModifierType.Add:
-                    add_tensor[modifier.field] = modifier.weight
-                else:
-                    raise InternalError(f'Unknown score modifier type {modifier.type}')
+    def _get_score_modifiers(self, marqo_query: MarqoQuery) -> Optional[Dict[str, Dict[str, float]]]:
+        if not marqo_query.score_modifiers:
+            return None
+        mult_tensor = {}
+        add_tensor = {}
+        for modifier in marqo_query.score_modifiers:
+            if modifier.type == ScoreModifierType.Multiply:
+                mult_tensor[modifier.field] = modifier.weight
+            elif modifier.type == ScoreModifierType.Add:
+                add_tensor[modifier.field] = modifier.weight
+            else:
+                raise InternalError(f'Unknown score modifier type {modifier.type}')
 
-            # Note one of these could be empty, but not both
-            return {
-                common.QUERY_INPUT_SCORE_MODIFIERS_MULT_WEIGHTS: mult_tensor,
-                common.QUERY_INPUT_SCORE_MODIFIERS_ADD_WEIGHTS: add_tensor
-            }
-
-        return None
+        # Note one of these could be empty, but not both
+        return {
+            common.QUERY_INPUT_SCORE_MODIFIERS_MULT_WEIGHTS: mult_tensor,
+            common.QUERY_INPUT_SCORE_MODIFIERS_ADD_WEIGHTS: add_tensor
+        }
 
     def _get_lexical_search_term(self, marqo_query: MarqoLexicalQuery) -> str:
-        if marqo_query.or_phrases:
-            or_terms = 'weakAnd(%s)' % ', '.join([
-                self._get_lexical_contains_term(phrase, marqo_query) for phrase in marqo_query.or_phrases
-            ])
-        else:
-            or_terms = ''
+        or_terms = (
+            f"weakAnd({', '.join([self._get_lexical_contains_term(phrase, marqo_query) for phrase in marqo_query.or_phrases])})"
+            if marqo_query.or_phrases
+            else ''
+        )
         if marqo_query.and_phrases:
             and_terms = ' AND '.join([
                 self._get_lexical_contains_term(phrase, marqo_query) for phrase in marqo_query.and_phrases
@@ -479,7 +468,10 @@ class StructuredVespaIndex(VespaIndex):
                                         f'Valid tensor field names are {", ".join(tensor_field_map.keys())}')
 
     def _verify_marqo_tensor_field(self, field_name: str, field_value: Dict[str, Any]):
-        if not set(field_value.keys()) == {constants.MARQO_DOC_CHUNKS, constants.MARQO_DOC_EMBEDDINGS}:
+        if set(field_value.keys()) != {
+            constants.MARQO_DOC_CHUNKS,
+            constants.MARQO_DOC_EMBEDDINGS,
+        }:
             raise InternalError(f'Invalid tensor field {field_name}. '
                                 f'Expected keys {constants.MARQO_DOC_CHUNKS}, {constants.MARQO_DOC_EMBEDDINGS} '
                                 f'but found {", ".join(field_value.keys())}')
@@ -550,10 +542,7 @@ class StructuredVespaIndex(VespaIndex):
                 cause=e
             ) from e
 
-        if chunk:
-            return [{closest_tensor_field.name: chunk}]
-        else:
-            return []
+        return [{closest_tensor_field.name: chunk}] if chunk else []
 
     def _get_python_type(self, marqo_type: FieldType) -> type:
         try:

@@ -51,11 +51,7 @@ class UnstructuredVespaIndex(VespaIndex):
         tensor_term = self._get_tensor_search_term(marqo_query)
 
         filter_term = self._get_filter_term(marqo_query)
-        if filter_term:
-            filter_term = f' AND {filter_term}'
-        else:
-            filter_term = ''
-
+        filter_term = f' AND {filter_term}' if filter_term else ''
         select_attributes = "*"
 
         summary = unstructured_common.SUMMARY_ALL_VECTOR if marqo_query.expose_facets else unstructured_common.SUMMARY_ALL_NON_VECTOR
@@ -63,7 +59,7 @@ class UnstructuredVespaIndex(VespaIndex):
         score_modifiers = self._get_score_modifiers(marqo_query)
 
         ranking = unstructured_common.RANK_PROFILE_EMBEDDING_SIMILARITY_MODIFIERS if score_modifiers \
-            else unstructured_common.RANK_PROFILE_EMBEDDING_SIMILARITY
+                else unstructured_common.RANK_PROFILE_EMBEDDING_SIMILARITY
 
         query_inputs = {
             unstructured_common.QUERY_INPUT_EMBEDDING: marqo_query.vector_query
@@ -125,7 +121,7 @@ class UnstructuredVespaIndex(VespaIndex):
 
             # Bool Filter
             if node.value.lower() in cls._FILTER_STRING_BOOL_VALUES:
-                filter_value = int(True if node.value.lower() == "true" else False)
+                filter_value = int(node.value.lower() == "true")
                 return (f'({unstructured_common.BOOL_FIELDS} contains sameElement(key contains "{node.field}", '
                         f'value = {filter_value}))')
 
@@ -201,35 +197,32 @@ class UnstructuredVespaIndex(VespaIndex):
             return tree_to_filter_string(marqo_query.filter.root)
 
     @staticmethod
-    def _get_score_modifiers(marqo_query: MarqoQuery) -> \
-            Optional[Dict[str, Dict[str, float]]]:
-        if marqo_query.score_modifiers:
-            mult_tensor = {}
-            add_tensor = {}
-            for modifier in marqo_query.score_modifiers:
-                if modifier.type == ScoreModifierType.Multiply:
-                    mult_tensor[modifier.field] = modifier.weight
-                elif modifier.type == ScoreModifierType.Add:
-                    add_tensor[modifier.field] = modifier.weight
-                else:
-                    raise InternalError(f'Unknown score modifier type {modifier.type}')
+    def _get_score_modifiers(marqo_query: MarqoQuery) -> Optional[Dict[str, Dict[str, float]]]:
+        if not marqo_query.score_modifiers:
+            return None
+        mult_tensor = {}
+        add_tensor = {}
+        for modifier in marqo_query.score_modifiers:
+            if modifier.type == ScoreModifierType.Multiply:
+                mult_tensor[modifier.field] = modifier.weight
+            elif modifier.type == ScoreModifierType.Add:
+                add_tensor[modifier.field] = modifier.weight
+            else:
+                raise InternalError(f'Unknown score modifier type {modifier.type}')
 
-            # Note one of these could be empty, but not both
-            return {
-                unstructured_common.QUERY_INPUT_SCORE_MODIFIERS_MULT_WEIGHTS: mult_tensor,
-                unstructured_common.QUERY_INPUT_SCORE_MODIFIERS_ADD_WEIGHTS: add_tensor
-            }
-
-        return None
+        # Note one of these could be empty, but not both
+        return {
+            unstructured_common.QUERY_INPUT_SCORE_MODIFIERS_MULT_WEIGHTS: mult_tensor,
+            unstructured_common.QUERY_INPUT_SCORE_MODIFIERS_ADD_WEIGHTS: add_tensor
+        }
 
     def _to_vespa_lexical_query(self, marqo_query: MarqoLexicalQuery) -> Dict[str, Any]:
         def _get_lexical_search_term(marqo_query: MarqoLexicalQuery) -> str:
-            if marqo_query.or_phrases:
-                or_terms = 'weakAnd(%s)' % ', '.join([
-                    f'default contains "{phrase}"' for phrase in marqo_query.or_phrases
-                ])
-            else:
-                or_terms = ''
+            or_terms = (
+                f"""weakAnd({', '.join([f'default contains "{phrase}"' for phrase in marqo_query.or_phrases])})"""
+                if marqo_query.or_phrases
+                else ''
+            )
             if marqo_query.and_phrases:
                 and_terms = ' AND '.join([
                     f'default contains "{phrase}"' for phrase in marqo_query.and_phrases
@@ -243,17 +236,13 @@ class UnstructuredVespaIndex(VespaIndex):
 
         lexical_term = _get_lexical_search_term(marqo_query)
         filter_term = self._get_filter_term(marqo_query)
-        if filter_term:
-            filter_term = f' AND {filter_term}'
-        else:
-            filter_term = ''
-
+        filter_term = f' AND {filter_term}' if filter_term else ''
         summary = unstructured_common.SUMMARY_ALL_VECTOR if marqo_query.expose_facets \
-            else unstructured_common.SUMMARY_ALL_NON_VECTOR
+                else unstructured_common.SUMMARY_ALL_NON_VECTOR
         score_modifiers = self._get_score_modifiers(marqo_query)
 
         ranking = unstructured_common.RANK_PROFILE_BM25_MODIFIERS if score_modifiers \
-            else unstructured_common.RANK_PROFILE_BM25
+                else unstructured_common.RANK_PROFILE_BM25
 
         query_inputs = {}
 
@@ -294,16 +283,15 @@ class UnstructuredVespaIndex(VespaIndex):
             Raises:
                 InvalidArgError if field_content is not acceptable
             """
-        if type(field_content) in cls._SUPPORTED_FIELD_CONTENT_TYPES:
-            if isinstance(field_content, list):
-                cls._validate_list(field_content, is_tensor_field)
-            return field_content
-        else:
+        if type(field_content) not in cls._SUPPORTED_FIELD_CONTENT_TYPES:
             raise errors.InvalidArgError(
                 f"Field content `{field_content}` \n"
                 f"of type `{type(field_content).__name__}` is not of valid content type! "
                 f"Allowed content types: {[ty.__name__ for ty in cls._SUPPORTED_FIELD_CONTENT_TYPES]}"
             )
+        if isinstance(field_content, list):
+            cls._validate_list(field_content, is_tensor_field)
+        return field_content
 
     @staticmethod
     def _validate_list(field_content: list, is_tensor_field: bool) -> None:

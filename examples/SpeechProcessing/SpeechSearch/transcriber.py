@@ -83,30 +83,27 @@ class AudioTranscriber:
         return transcriptions
 
     def _create_id(self, file: str, i: int):
-        return os.path.basename(file) + f"_{i}"
+        return f"{os.path.basename(file)}_{i}"
 
     def process_audio(self, file: str) -> Dict[str, Any]:
         speaker_times = self.annotate(file)
         audio_data, samplerate = librosa.load(file, sr=self.sample_rate)
 
-        datas = []
-        for start, end, _ in speaker_times:
-            datas.append(audio_data[int(start * samplerate) : int(end * samplerate)])
-
+        datas = [
+            audio_data[int(start * samplerate) : int(end * samplerate)]
+            for start, end, _ in speaker_times
+        ]
         transcriptions = self.transcribe(datas, samplerate)
 
-        annotated_transcriptions = []
-        for i in range(len(transcriptions)):
-            annotated_transcriptions.append(
-                {
-                    "_id": self._create_id(file, i),
-                    "speaker": [*speaker_times[i][2]],
-                    "start": speaker_times[i][0],
-                    "end": speaker_times[i][1],
-                    "transcription": transcriptions[i],
-                    "samplerate": samplerate,
-                    "file": file,
-                }
-            )
-
-        return annotated_transcriptions
+        return [
+            {
+                "_id": self._create_id(file, i),
+                "speaker": [*speaker_times[i][2]],
+                "start": speaker_times[i][0],
+                "end": speaker_times[i][1],
+                "transcription": transcriptions[i],
+                "samplerate": samplerate,
+                "file": file,
+            }
+            for i in range(len(transcriptions))
+        ]

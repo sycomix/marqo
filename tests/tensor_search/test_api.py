@@ -44,13 +44,13 @@ class TestApiErrors(MarqoTestCase):
 
     def tearDown(self) -> None:
         # Make sure no indexes are left over from tests
-        self.client.delete("/indexes/" + self.index_name_1)
+        self.client.delete(f"/indexes/{self.index_name_1}")
 
     def test_index_not_found_error(self):
         # delete index if it exists
-        self.client.delete("/indexes/" + self.index_name_1)
+        self.client.delete(f"/indexes/{self.index_name_1}")
 
-        response = self.client.delete("/indexes/" + self.index_name_1)
+        response = self.client.delete(f"/indexes/{self.index_name_1}")
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.json()["code"], "index_not_found")
         self.assertEqual(response.json()["type"], "invalid_request")
@@ -58,16 +58,14 @@ class TestApiErrors(MarqoTestCase):
 
     def test_index_already_exists(self):
         # create index if it does not already exist
-        self.client.post("/indexes/" + self.index_name_1, json={
-            "type": "structured",
-            "allFields": [],
-            "tensorFields": []
-        })
-        response = self.client.post("/indexes/" + self.index_name_1, json={
-            "type": "structured",
-            "allFields": [],
-            "tensorFields": []
-        })
+        self.client.post(
+            f"/indexes/{self.index_name_1}",
+            json={"type": "structured", "allFields": [], "tensorFields": []},
+        )
+        response = self.client.post(
+            f"/indexes/{self.index_name_1}",
+            json={"type": "structured", "allFields": [], "tensorFields": []},
+        )
 
         self.assertEqual(response.status_code, 409)
         self.assertEqual(response.json()["code"], "index_already_exists")
@@ -75,17 +73,16 @@ class TestApiErrors(MarqoTestCase):
         assert "already exists" in response.json()["message"] and "index1" in response.json()["message"]
 
     def test_invalid_field_name(self):
-        self.client.post("/indexes/" + self.index_name_1, json={
-            "type": "structured",
-            "allFields": [],
-            "tensorFields": []
-        })
+        self.client.post(
+            f"/indexes/{self.index_name_1}",
+            json={"type": "structured", "allFields": [], "tensorFields": []},
+        )
 
         # use attributesToRetrieve on a non-existent field
-        response = self.client.post("/indexes/" + self.index_name_1 + "/search?device=cpu", json={
-            "q": "test",
-            "attributesToRetrieve": ["non_existent_field"]
-        })
+        response = self.client.post(
+            f"/indexes/{self.index_name_1}/search?device=cpu",
+            json={"q": "test", "attributesToRetrieve": ["non_existent_field"]},
+        )
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["code"], "invalid_field_name")
@@ -93,20 +90,20 @@ class TestApiErrors(MarqoTestCase):
         assert "has no field non_existent_field" in response.json()["message"]
 
     def test_invalid_data_type(self):
-        self.client.post("/indexes/" + self.index_name_1, json={
-            "type": "structured",
-            "allFields": [{"name": "field1", "type": "text"}],
-            "tensorFields": []
-        })
+        self.client.post(
+            f"/indexes/{self.index_name_1}",
+            json={
+                "type": "structured",
+                "allFields": [{"name": "field1", "type": "text"}],
+                "tensorFields": [],
+            },
+        )
 
         # Add a document to field1 of the wrong type
-        response = self.client.post("/indexes/" + self.index_name_1 + "/documents?device=cpu", json={
-            "documents": [
-                {
-                    "field1": 123
-                }
-            ]
-        })
+        response = self.client.post(
+            f"/indexes/{self.index_name_1}/documents?device=cpu",
+            json={"documents": [{"field1": 123}]},
+        )
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["code"], "invalid_argument")
@@ -114,16 +111,19 @@ class TestApiErrors(MarqoTestCase):
         assert "Expected a value of" in response.json()["message"] and "but found" in response.json()["message"]
 
     def test_filter_string_parsing_error(self):
-        self.client.post("/indexes/" + self.index_name_1, json={
-            "type": "structured",
-            "allFields": [{"name": "field1", "type": "text"}],
-            "tensorFields": []
-        })
+        self.client.post(
+            f"/indexes/{self.index_name_1}",
+            json={
+                "type": "structured",
+                "allFields": [{"name": "field1", "type": "text"}],
+                "tensorFields": [],
+            },
+        )
 
-        response = self.client.post("/indexes/" + self.index_name_1 + "/search?device=cpu", json={
-            "q": "test",
-            "filter": ""
-        })
+        response = self.client.post(
+            f"/indexes/{self.index_name_1}/search?device=cpu",
+            json={"q": "test", "filter": ""},
+        )
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["code"], "invalid_argument")
@@ -132,12 +132,15 @@ class TestApiErrors(MarqoTestCase):
 
     def test_invalid_argument_error(self):
         # Try to create index with invalid model (should raise 400)
-        response = self.client.post("/indexes/" + self.index_name_1, json={
-            "type": "structured",
-            "allFields": [{"name": "field1", "type": "text"}],
-            "tensorFields": [],
-            "model": "random_nonexistent_model"
-        })
+        response = self.client.post(
+            f"/indexes/{self.index_name_1}",
+            json={
+                "type": "structured",
+                "allFields": [{"name": "field1", "type": "text"}],
+                "tensorFields": [],
+                "model": "random_nonexistent_model",
+            },
+        )
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["code"], "invalid_argument")

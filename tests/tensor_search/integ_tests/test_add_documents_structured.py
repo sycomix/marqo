@@ -215,7 +215,7 @@ class TestAddDocumentsStructured(MarqoTestCase):
         ]
         for index_name, desc in test_indexes:
             for test_case in test_cases:
-                with self.subTest(test_case[0] + ' - ' + desc):
+                with self.subTest(f'{test_case[0]} - {desc}'):
                     tensor_search.add_documents(
                         config=self.config, add_docs_params=AddDocsParams(
                             index_name=index_name,
@@ -396,9 +396,16 @@ class TestAddDocumentsStructured(MarqoTestCase):
                         )
                     )
                     assert add_res['errors'] is True
-                    assert all(['error' in item for item in add_res['items'] if item['_id'].startswith('to_fail')])
-                    assert all([item['status'] == 200
-                                for item in add_res['items'] if item['_id'].startswith('to_pass')])
+                    assert all(
+                        'error' in item
+                        for item in add_res['items']
+                        if item['_id'].startswith('to_fail')
+                    )
+                    assert all(
+                        item['status'] == 200
+                        for item in add_res['items']
+                        if item['_id'].startswith('to_pass')
+                    )
 
     def test_add_documents_id_validation(self):
         """
@@ -468,7 +475,11 @@ class TestAddDocumentsStructured(MarqoTestCase):
                     )
                 )
                 assert add_res['errors'] is True
-                assert all(['error' in item for item in add_res['items'] if item['_id'].startswith('to_fail')])
+                assert all(
+                    'error' in item
+                    for item in add_res['items']
+                    if item['_id'].startswith('to_fail')
+                )
 
     def test_add_documents_set_device(self):
         """
@@ -638,7 +649,7 @@ class TestAddDocumentsStructured(MarqoTestCase):
         max_size = 400000
         mock_environ = {enums.EnvVars.MARQO_MAX_DOC_BYTES: str(max_size)}
 
-        @mock.patch.dict(os.environ, {**os.environ, **mock_environ})
+        @mock.patch.dict(os.environ, **os.environ | mock_environ)
         def run():
             update_res = tensor_search.add_documents(
                 config=self.config, add_docs_params=AddDocsParams(
@@ -663,7 +674,7 @@ class TestAddDocumentsStructured(MarqoTestCase):
         max_size = 400000
         mock_environ = {enums.EnvVars.MARQO_MAX_DOC_BYTES: str(max_size)}
 
-        @mock.patch.dict(os.environ, {**os.environ, **mock_environ})
+        @mock.patch.dict(os.environ, **os.environ | mock_environ)
         def run():
             update_res = tensor_search.add_documents(
                 config=self.config, add_docs_params=AddDocsParams(

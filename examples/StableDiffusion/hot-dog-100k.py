@@ -28,7 +28,7 @@ docker_path = 'http://host.docker.internal:8222/'
 pid = subprocess.Popen(['python3', '-m', 'http.server', '8222', '--directory', images_directory], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
 # now find all the files
-files = glob.glob(images_directory + "/*.jpg")
+files = glob.glob(f"{images_directory}/*.jpg")
 
 # we want to map the filename only with its docker path
 files_map = {os.path.basename(f):f for f in files}
@@ -134,8 +134,7 @@ current_document = documents[index]
 # create a list to store the "sorted" documents
 ordered_documents = [current_document['_id']]
 
-for i in range(len(documents)):
-
+for _ in documents:
     # remove current document
     client.index(index_name).delete_documents([current_document['_id']])
 
@@ -173,7 +172,10 @@ def copyWithSubprocess(cmd):
 save_base_dir = 'outputs/'
 Path(save_base_dir).mkdir(parents=True, exist_ok=True)
 
-new_images = [save_base_dir + f'{str(i).zfill(5)}' + os.path.basename(f) for i,f in enumerate(ordered_images)]
+new_images = [
+    f'{save_base_dir}{str(i).zfill(5)}' + os.path.basename(f)
+    for i, f in enumerate(ordered_images)
+]
 
 for image, new_image in zip(ordered_images, new_images):
 

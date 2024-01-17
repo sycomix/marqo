@@ -67,9 +67,13 @@ def _check_searchable_fields_in_results(search_results: Dict, searchable_fields:
         bool: _description_
     """
 
-    if searchable_fields == None:
+    if searchable_fields is None:
         return True
-    return any([True for r in search_results[ResultsFields.hits] if any(s in r for s in searchable_fields)])
+    return any(
+        True
+        for r in search_results[ResultsFields.hits]
+        if any(s in r for s in searchable_fields)
+    )
     
 def cleanup_final_reranked_results(reranked_results: Dict) -> None:
     """removes the fields that were created for the reranking process

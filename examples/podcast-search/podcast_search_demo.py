@@ -9,21 +9,12 @@ import pandas as pd
 def load_data(file: str, number_data: int) -> dict:
     podcast_data = pd.read_csv(file).head(number_data)[['name', 'description']].to_dict('records')
 
-    # dataset came from this link: https://www.vox.com/today-explained
-    # the .csv file has the following headers:
-    # name, description
-    # (name of podcast, short description)
-
-    # create a 'transcript' key and add the transcript text as values to each record
-    id_counter = 1
-    for data in podcast_data:
+    for id_counter, data in enumerate(podcast_data, start=1):
         path = "data/transcripts/" + data['name'] + ".txt"
         with open(path, 'r') as f:
             content = f.read()
             data['transcript'] = content
             data['_id'] = str(id_counter)  # _id is a special key which is unique to every document
-        id_counter += 1
-
     return podcast_data
 
 

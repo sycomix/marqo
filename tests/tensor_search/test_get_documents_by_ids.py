@@ -119,8 +119,7 @@ class TestGetDocuments(MarqoTestCase):
 
     def test_get_document_vectors_failures(self):
         for show_vectors_option in (True, False):
-            for bad_get in [[123], [None], [set()], list(), 1.3, dict(),
-                            None, 123, ['123', 456], ['123', 45, '445'], [14, '58']]:
+            for bad_get in [[123], [None], [set()], [], 1.3, dict(), None, 123, ['123', 456], ['123', 45, '445'], [14, '58']]:
                 try:
                     res = tensor_search.get_documents_by_ids(
                         config=self.config, index_name=self.index_name_1, document_ids=bad_get,
@@ -147,7 +146,7 @@ class TestGetDocuments(MarqoTestCase):
         for max_doc in [0, 1, 2, 5, 10, 100, 1000]:
             mock_environ = {enums.EnvVars.MARQO_MAX_RETRIEVABLE_DOCS: str(max_doc)}
 
-            @mock.patch.dict(os.environ, {**os.environ, **mock_environ})
+            @mock.patch.dict(os.environ, **os.environ | mock_environ)
             def run():
                 half_search = tensor_search.get_documents_by_ids(
                    config=self.config, index_name=self.index_name_2,
@@ -172,6 +171,7 @@ class TestGetDocuments(MarqoTestCase):
                 except IllegalRequestedDocCount:
                     pass
                 return True
+
         assert run()
 
     def test_limit_results_none(self):

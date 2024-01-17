@@ -4,7 +4,7 @@
 
 from marqo import Client
 import os
-import pandas as pd 
+import pandas as pd
 from utils import download_data
 
 #####################################################
@@ -24,7 +24,7 @@ in_docker = True
 
 data = pd.read_csv('files.csv', index_col=0)
 docker_path = 'http://host.docker.internal:8222/'
-local_dir = os.getcwd() + '/images/'
+local_dir = f'{os.getcwd()}/images/'
 
 locators = download_data(data=data, download_dir=local_dir, use_remote=use_remote, in_docker=in_docker, docker_path=docker_path)
 
@@ -64,7 +64,7 @@ for patch_method in patch_methods:
 
     suffix = '' if patch_method is None else f"-{patch_method.replace('/','-')}"
     index_name = index_name_prefix + suffix
-    
+
     # update the settings we want to use
     settings['index_defaults']['model'] = model_name
     settings['index_defaults']['image_preprocessing']['patch_method'] = patch_method
@@ -75,7 +75,7 @@ for patch_method in patch_methods:
             client.delete_index(index_name)
         except:
             print("index does not exist, cannot delete")
-    
+
     # create the index with our settings
     response = client.create_index(index_name, settings_dict=settings)
 

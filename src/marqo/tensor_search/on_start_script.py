@@ -50,9 +50,7 @@ class CUDAAvailable:
 
     def run(self):
         def id_to_device(id):
-            if id < 0:
-                return ['cpu']
-            return [torch.cuda.get_device_name(id)]
+            return ['cpu'] if id < 0 else [torch.cuda.get_device_name(id)]
 
         device_count = 0 if not torch.cuda.is_available() else torch.cuda.device_count()
 
@@ -125,7 +123,7 @@ class ModelsForCacheing:
                 _ = _preload_model(model=model, content=test_string, device=device)
 
                 t = 0
-                for n in range(N):
+                for _ in range(N):
                     t0 = time.time()
                     _ = _preload_model(model=model, content=test_string, device=device)
                     t1 = time.time()

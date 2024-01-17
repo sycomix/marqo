@@ -133,9 +133,8 @@ class VespaClient:
         while time.time() - start_time < timeout:
             if self.get_application_has_converged():
                 return
-            else:
-                logger.debug('Waiting for Vespa application to converge')
-                time.sleep(1)
+            logger.debug('Waiting for Vespa application to converge')
+            time.sleep(1)
 
         raise VespaError(f"Vespa application did not converge within {timeout} seconds")
 
@@ -222,11 +221,9 @@ class VespaClient:
         if not batch:
             return FeedBatchResponse(responses=[], errors=False)
 
-        batch_response = conc.run_coroutine(
+        return conc.run_coroutine(
             self._feed_batch_async(batch, schema, concurrency, timeout)
         )
-
-        return batch_response
 
     def feed_batch_sync(self, batch: List[VespaDocument], schema: str) -> FeedBatchResponse:
         """
@@ -246,11 +243,7 @@ class VespaClient:
             for document in batch
         ]
 
-        errors = False
-        for response in responses:
-            if response.status != 200:
-                errors = True
-
+        errors = any(response.status != 200 for response in responses)
         return FeedBatchResponse(responses=responses, errors=errors)
 
     def feed_batch_multithreaded(self, batch: List[VespaDocument], schema: str,
@@ -276,11 +269,7 @@ class VespaClient:
                     lambda document: self._feed_document_sync(sync_client, document, schema, timeout=60), batch
                 ))
 
-        errors = False
-        for response in responses:
-            if response.status != 200:
-                errors = True
-
+        errors = any(response.status != 200 for response in responses)
         return FeedBatchResponse(responses=responses, errors=errors)
 
     def get_document(self, id: str, schema: str) -> GetDocumentResponse:
@@ -359,11 +348,9 @@ class VespaClient:
         if not ids:
             return GetBatchResponse(responses=[], errors=False)
 
-        batch_response = conc.run_coroutine(
+        return conc.run_coroutine(
             self._get_batch_async(ids, schema, concurrency, timeout)
         )
-
-        return batch_response
 
     def delete_document(self, id: str, schema: str) -> DeleteDocumentResponse:
         """
@@ -417,11 +404,9 @@ class VespaClient:
         if not ids:
             return DeleteBatchResponse(responses=[], errors=False)
 
-        batch_response = conc.run_coroutine(
+        return conc.run_coroutine(
             self._delete_batch_async(ids, schema, concurrency, timeout)
         )
-
-        return batch_response
 
     def get_metrics(self) -> ApplicationMetrics:
         """
@@ -701,8 +686,9 @@ class VespaClient:
             self._raise_for_error_code(error_code, message, e)
 
     def _raise_for_error_code(self, error_code: str, message: str, cause: Exception) -> None:
-        exception = self._VESPA_ERROR_CODE_TO_EXCEPTION.get(error_code, VespaError)
-        if exception:
+        if exception := self._VESPA_ERROR_CODE_TO_EXCEPTION.get(
+            error_code, VespaError
+        ):
             raise exception(message=message, cause=cause) from cause
 
         raise VespaStatusError(message=f'{error_code}: {message}', cause=cause) from cause
